@@ -31,4 +31,5 @@
                 ((:module "src"
                           :components
                           ((:file "package")
-                           (:file "path" :depends-on ("package"))))))
+                           (:file "path" :depends-on ("package"))
+                           (:file "shell" :depends-on ("package"))))))
