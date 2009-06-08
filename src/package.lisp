@@ -20,4 +20,5 @@
   (:nicknames :love)
   (:use :cl :external-program :cl-fad)
   (:export :pathname-change-suffix
-           :shell))
+           :shell
+           :interpolate-commandline))

@@ -21,14 +21,15 @@
                          (external-program:run "bash" (list "-c" (apply #'concatenate 'string args))
                                                :output stream)))
 
-;; (cl-ppcre:regex-replace-all "%([^ ])" "cc -c -o %@ %<"
-;;                                      #'(lambda (target-string start end match-start match-end reg-starts reg-ends)
-;;                                          (declare (ignore start end match-start match-end))
-;;                                          (let ((match (subseq target-string
-;;                                                            (svref reg-starts 0) (svref reg-ends 0))))
-;;                                            (or (when (= 1 (length match)) 
-;;                                                  (case (char match 0)
-;;                                                    (#\@ "foo")
-;;                                                    (#\< "bar")
-;;                                                    (#\% "%")
-;;                                                    (otherwise "")))))))
+(defun interpolate-commandline (cmd target sourcefn)
+  (cl-ppcre:regex-replace-all "%([^ ])*" cmd
+                              #'(lambda (target-string start end match-start match-end reg-starts reg-ends)
+                                  (declare (ignore start end match-start match-end))
+                                  (let ((match (subseq target-string
+                                                       (svref reg-starts 0) (svref reg-ends 0))))
+                                    (or (when (= 1 (length match))
+                                          (case (char match 0)
+                                            (#\@ target)
+                                            (#\< (funcall sourcefn target))
+                                            (#\% "%")))
+                                        (sb-ext:posix-getenv match))))))

@@ -26,7 +26,7 @@
                 :version "0.1"
                 :author "Alexander Kahl <e-user@gmx.net>"
                 :license "GPLv3+"
-                :depends-on (:external-program :cl-fad)
+                :depends-on (:external-program :cl-fad :cl-ppcre)
                 :components
                 ((:module "src"
                           :components
