@@ -1,2 +1,7 @@
-evol - entrenched virtues of lisp
-=================================
+evol - entrenched virtues of lisp / love reversed
+=================================================
+OK, there is not really much code here and only sometimes I find the spare time
+to continue my coding but the goal of this project is to provide an
+autotools-compatible (entrenching!) tool (or set of tools) that is able to
+replace the autotools without repeating errors made by other projects with
+similar ambitions.
