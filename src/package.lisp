@@ -1,5 +1,5 @@
 ;;;; evol - package.lisp
-;;;; Copyright (C) 2009  Alexander Kahl <e-user@gmx.net>
+;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -20,5 +20,6 @@
   (:nicknames :love)
   (:use :cl :external-program :cl-fad)
   (:export :pathname-change-suffix
-           :shell
-           :interpolate-commandline))
+           :run-command
+           :defenv
+           :getenv))

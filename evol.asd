@@ -1,5 +1,5 @@
 ;;;; evol - evol.asd
-;;;; Copyright (C) 2009  Alexander Kahl <e-user@gmx.net>
+;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -22,14 +22,15 @@
 (in-package :evol-system)
 
 (asdf:defsystem :evol
-                :description "evol: Entrenched Virtues of Lisp (Love reversed). Multi-purpose build system."
-                :version "0.1"
-                :author "Alexander Kahl <e-user@gmx.net>"
+                :description "evol- entrenched virtues of lisp / love reversed. Multi-purpose build system."
+                :version "0.0.1"
+                :author "Alexander Kahl <e-user@fsfe.org>"
                 :license "GPLv3+"
                 :depends-on (:external-program :cl-fad :cl-ppcre)
                 :components
                 ((:module "src"
                           :components
                           ((:file "package")
-                           (:file "path" :depends-on ("package"))
-                           (:file "shell" :depends-on ("package"))))))
+                           (:file "path"        :depends-on ("package"))
+                           (:file "environment" :depends-on ("package"))
+                           (:file "shell"       :depends-on ("environment" "package"))))))
