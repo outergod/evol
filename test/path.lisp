@@ -14,12 +14,21 @@
 ;;;; You should have received a copy of the GNU General Public License
 ;;;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(in-package :evol)
+(in-package :evol-test)
 
-(defun pathname-suffix-p (suffix pathspec)
-  (string= suffix (pathname-type (cl-fad:pathname-as-file pathspec))))
+(in-suite all)
+(defsuite path)
+(in-suite path)
 
-(defun pathname-change-suffix (suffix pathspec)
-  (let ((pathname (cl-fad:pathname-as-file pathspec)))
-    (setf (slot-value pathname 'type) suffix)
-    (namestring pathname)))
+(deftest pathname-suffix-t ()
+  (is (pathname-suffix-p "c" "foo.c"))
+  (is (pathname-suffix-p "lisp" "bar.lisp")))
+
+(deftest pathname-suffix-nil ()
+  (is (not (pathname-suffix-p "vba" "foo.c")))
+  (is (not (pathname-suffix-p "el" "bar.lisp"))))
+
+(deftest pathname-change ()
+  (is (string= "foo.d" (pathname-change-suffix "d" "foo")))
+  (is (string= "foo.c" (pathname-change-suffix "c" "foo.bar")))
+  (is (string= "foo.bar.bop" (pathname-change-suffix "bop" "foo.bar.baz"))))

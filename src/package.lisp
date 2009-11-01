@@ -19,7 +19,8 @@
 (defpackage :evol
   (:nicknames :love)
   (:use :cl :external-program :cl-fad)
-  (:export :pathname-change-suffix
+  (:export :pathname-suffix-p
+           :pathname-change-suffix
            :run-command
            :defenv
            :getenv))

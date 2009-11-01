@@ -1,4 +1,4 @@
-;;;; evol - path.lisp
+;;;; evol - package.lisp
 ;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
@@ -14,12 +14,13 @@
 ;;;; You should have received a copy of the GNU General Public License
 ;;;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(in-package :evol)
+(in-package :evol-test-system)
 
-(defun pathname-suffix-p (suffix pathspec)
-  (string= suffix (pathname-type (cl-fad:pathname-as-file pathspec))))
+(defpackage :evol-test
+  (:use :cl :evol :stefil)
+  (:export :all :environment :path))
 
-(defun pathname-change-suffix (suffix pathspec)
-  (let ((pathname (cl-fad:pathname-as-file pathspec)))
-    (setf (slot-value pathname 'type) suffix)
-    (namestring pathname)))
+(in-package :evol-test)
+
+(in-root-suite)
+(defsuite all)

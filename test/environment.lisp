@@ -1,4 +1,4 @@
-;;;; evol - path.lisp
+;;;; evol - environment.lisp
 ;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
@@ -16,10 +16,29 @@
 
 (in-package :evol)
 
-(defun pathname-suffix-p (suffix pathspec)
-  (string= suffix (pathname-type (cl-fad:pathname-as-file pathspec))))
+(import
+ '(*environment* posix-getenv)
+ (find-package :evol-test))
 
-(defun pathname-change-suffix (suffix pathspec)
-  (let ((pathname (cl-fad:pathname-as-file pathspec)))
-    (setf (slot-value pathname 'type) suffix)
-    (namestring pathname)))
+(in-package :evol-test)
+
+(in-suite all)
+(defsuite environment)
+(in-suite environment)
+
+(deftest environment-exists ()
+  (is (boundp '*environment*)))
+
+(defixture environment-fixture
+  (:setup (setq *environment* (make-hash-table))))
+
+(deftest get-default-nonexist ()
+  (is (string= "" (getenv "XXX"))))
+
+(deftest put-string ()
+  (defenv "foo" "bar")
+  (is (string= "bar" (gethash (intern "foo") *environment* ""))))
+
+(deftest get-string ()
+  (put-string)
+  (is (string= "bar" (getenv "foo"))))

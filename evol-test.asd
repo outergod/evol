@@ -1,4 +1,4 @@
-;;;; evol - evol.asd
+;;;; evol - evol-test.asd
 ;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
@@ -16,21 +16,19 @@
 
 (in-package :cl-user)
 
-(defpackage :evol-system
+(defpackage :evol-test-system
   (:use :cl :asdf))
 
-(in-package :evol-system)
+(in-package :evol-test-system)
 
-(asdf:defsystem :evol
-                :description "evol - entrenched virtues of lisp / love reversed. Multi-purpose build system."
+(asdf:defsystem :evol-test
+                :description "evol test package."
                 :version "0.0.1"
                 :author "Alexander Kahl <e-user@fsfe.org>"
                 :license "GPLv3+"
-                :depends-on (:external-program :cl-fad :cl-ppcre)
+                :depends-on (:evol)
                 :components
-                ((:module "src"
+                ((:module "test"
                           :components
                           ((:file "package")
-                           (:file "path"        :depends-on ("package"))
-                           (:file "environment" :depends-on ("package"))
-                           (:file "shell"       :depends-on ("environment" "package"))))))
+                           (:file "environment" :depends-on ("package"))))))
