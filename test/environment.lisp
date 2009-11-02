@@ -17,7 +17,7 @@
 (in-package :evol)
 
 (import
- '(*environment* posix-getenv)
+ '(*environment* posix-getenv internify symbolize)
  (find-package :evol-test))
 
 (in-package :evol-test)
@@ -32,13 +32,30 @@
 (defixture environment-fixture
   (:setup (setq *environment* (make-hash-table))))
 
-(deftest get-default-nonexist ()
-  (is (string= "" (getenv "XXX"))))
+(deftest internification ()
+  (is (symbolp (internify "foo")))
+  (is (symbolp (internify 'foo)))
+  (is (symbolp (internify 4)))
+  (is (symbolp (internify #\a))))
+
+(deftest symbolization ()
+  (internification)
+  (is (equal 'foo (symbolize foo)))
+  (is (equal 'foo (symbolize 'foo)))
+  (is (equal 'foo (symbolize "foo")))
+  (is (equal '|#\\F| (symbolize #\f))))
+
+(deftest getenv-default-nonexist ()
+  (is (stringp (getenv 'XXX)))
+  (is (string= "" (getenv 'XXX))))
 
 (deftest put-string ()
-  (defenv "foo" "bar")
-  (is (string= "bar" (gethash (intern "foo") *environment* ""))))
+  (getenv-autoquote)
+  (defenv foo "bar")
+  (is (string= "bar" (gethash 'foo *environment* "")))
+  (is (string= "bar" (gethash (symbolize foo) *environment* ""))))
 
 (deftest get-string ()
-  (put-string)
-  (is (string= "bar" (getenv "foo"))))
+  (getenv-autoquote)
+  (defenv foo "bar")
+  (is (string= "bar" (getenv 'foo))))

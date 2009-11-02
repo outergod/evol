@@ -1,9 +1,9 @@
 ;; -*- mode: lisp -*-
 (asdf:oos 'asdf:load-op :evol)
 
-(evol:defenv "cc" "cc")
-(evol:defenv "objects" '("main.o" "program.o"))
-(evol:defenv "program" "main")
+(evol:defenv cc "cc")
+(evol:defenv objects '("main.o" "program.o"))
+(evol:defenv program "main")
 
 (defun do-objects ()
   (mapc #'(lambda (pathname)
@@ -12,7 +12,7 @@
                               :sourcefn #'(lambda (target modifier)
                                             (declare (ignore modifier))
                                             (evol:pathname-change-suffix "c" target))))
-        (evol:getenv "objects")))
+        (evol:getenv 'objects)))
 
 (defun do-main ()
   (do-objects)
@@ -20,10 +20,10 @@
                     :target (evol:getenv "program")
                     :sourcefn #'(lambda (target modifier)
                                   (declare (ignore target modifier))
-                                  (evol:getenv "objects"))))
+                                  (evol:getenv 'objects))))
 
 (defun do-all () (do-main))
 
 (defun do-clean ()
-  (evol:run-command "rm -f %@" :target (cons (evol:getenv "program")
-                                             (evol:getenv "objects"))))
+  (evol:run-command "rm -f %@" :target (cons (evol:getenv 'program)
+                                             (evol:getenv 'objects))))
