@@ -33,4 +33,5 @@
                           ((:file "package")
                            (:file "path"        :depends-on ("package"))
                            (:file "environment" :depends-on ("package"))
-                           (:file "shell"       :depends-on ("environment" "package"))))))
+                           (:file "shell"       :depends-on ("environment" "package"))
+                           (:file "target"      :depends-on ("shell" "path" "environment"))))))
