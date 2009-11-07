@@ -22,5 +22,7 @@
   (:export :pathname-suffix-p
            :pathname-change-suffix
            :run-command
+           :default-sourcefn
            :defenv
-           :getenv))
+           :getenv
+           :*environment*))
