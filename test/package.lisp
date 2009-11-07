@@ -18,7 +18,7 @@
 
 (defpackage :evol-test
   (:use :cl :evol :stefil)
-  (:export :all :environment :path))
+  (:export :all))
 
 (in-package :evol-test)
 
