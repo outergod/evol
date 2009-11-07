@@ -28,11 +28,11 @@
     ,(if (symbolp name) name
        (internify (eval name)))))
 
-(defun getenv (var)
-  (gethash (internify var) *environment* ""))
+(defun getenv (var &optional (environment *environment*))
+  (gethash (internify var) environment ""))
 
-(defmacro defenv (var val)
-  `(setf (gethash (symbolize ,var) *environment*) ,val))
+(defmacro defenv (var val &optional (environment *environment*))
+  `(setf (gethash (symbolize ,var) ,environment) ,val))
 
 (defun posix-getenv (name)
   #+:sbcl (or (sb-ext:posix-getenv name) "")

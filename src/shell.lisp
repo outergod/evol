@@ -20,9 +20,9 @@
 ;;   (with-output-to-string (stream)
 ;;                          (external-program:run "bash" (list "-c" (apply #'concatenate 'string args))
 ;;                                                :output stream)))
-
-(defun run-command (cmd &key (target "") (sourcefn #'default-sourcefn) (verbose t))
-  "run-command cmd &key target sourcefn verbose => string
+(defun run-command (cmd &key (target "") (sourcefn #'default-sourcefn)
+                             (environment *environment*) (verbose t))
+  "run-command cmd &key target sourcefn environment verbose => string
 
 Run command line string cmd after interpolation against name of target,
 evaluation of target through sourcefn and honoring common quoting rules, in line
@@ -33,8 +33,8 @@ with Bourne shell syntax. Returns stdout/stderr."
                            (external-program:run (car interpolcmd) (cdr interpolcmd)
                                                  :output stream))))
 
-(defun interpolate-commandline (cmd &key (target "") (sourcefn #'default-sourcefn))
-  "interpolate-commandline cmd &key target sourcefn => list
+(defun interpolate-commandline (cmd &key target sourcefn environment)
+  "interpolate-commandline cmd &key target sourcefn environment => list
 
 Interpolate split arguments of command line string cmd after grouping through
 Bourne shell syntax block quoting, see split-commandline for details.
@@ -62,8 +62,8 @@ Split command line string cmd into arguments accourding to Bourne shell syntax
 rules honoring double quotes [\"], single quotes ['] and regular whitespace."
   (cl-ppcre:all-matches-as-strings "'[^']*'|\"[^\"]*\"|\\S+" cmd))
 
-(defun interpolate-argument (argument target sourcefn)
-  "interpolate-argument argument target sourcefn => list
+(defun interpolate-argument (argument target sourcefn environment)
+  "interpolate-argument argument target sourcefn environment => list
 
 Expand % and $ matches in string argument in turn and re-split the resulting
 string into one or more new arguments, returning them in a list."
@@ -71,11 +71,11 @@ string into one or more new arguments, returning them in a list."
    (interpolate-$-argument
     (interpolate-%-argument argument target sourcefn))))
 
-(defun interpolate-%-argument (argument target sourcefn)
-  "interpolate-%-argument argument target sourcefn => string
+(defun interpolate-%-argument (argument target sourcefn environment)
+  "interpolate-%-argument argument target sourcefn environment => string
 
-Expand all matches of % words in string argument honoring special target and
-sourcefn replacing words."
+Expand all matches of % words in string argument honoring the special target and
+sourcefn matches and, for the rest, the environment."
   (cl-ppcre:regex-replace-all "%([^ %]*)" argument
                               (replace-with-region #'expand-%-match target sourcefn)))
 
@@ -98,8 +98,8 @@ searched additionally passing args."
                                (svref reg-starts 0) (svref reg-ends 0))
              args)))
 
-(defun expand-%-match (match target sourcefn)
-  "expand-%-match match target sourcefn => string
+(defun expand-%-match (match target sourcefn environment)
+  "expand-%-match match target sourcefn environment => string
 
 Act depending on string match:
 - % returns %
@@ -112,13 +112,13 @@ Act depending on string match:
   modify the deflation seperator, simply pass any non-whitespace character
   sequence after @ or <, e.g.
   [@,] for target := (foo bar baz) => \"foo,bar,baz\""
-  (let ((modifier (when (> (length match) 1)
-                    (subseq match 1))))
+  (let ((modifier (if (> (length match) 1)
+                      (subseq match 1) " ")))
     (case (char match 0)
       (#\% "%")
-      (#\@ (deflate-string target (or modifier " ")))
-      (#\< (deflate-string (funcall sourcefn target (or modifier " "))))
-      (t (or (getenv match) "")))))
+      (#\@ (deflate-string target modifier))
+      (#\< (deflate-string (funcall sourcefn target modifier)))
+      (t (or (getenv match environment) "")))))
 
 (defun expand-$-match (match)
   "expand-$-match match => string
@@ -130,8 +130,7 @@ Lookup match in the environment CL was started in returning the result."
   "deflate-string list &optional separator => string|object
 
 Splice list of strings into merged string having elements separated with string
-seperator.
-"
+seperator."
   (if (listp list)
       (format nil (concatenate 'string "~{~a~^" separator "~}")
               list separator)
