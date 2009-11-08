@@ -18,16 +18,6 @@
 
 (defparameter *environment* (make-hash-table))
 
-(defun internify (name)
-  (cond ((symbolp name) name)
-        ((stringp name) (intern (string-upcase name)))
-        (t (intern (string-upcase (write-to-string name))))))
-
-(defmacro symbolize (name)
-  `(quote
-    ,(if (symbolp name) name
-       (internify (eval name)))))
-
 (defun getenv (var &optional (environment *environment*))
   (gethash (internify var) environment ""))
 
@@ -37,3 +27,13 @@
 (defun posix-getenv (name)
   #+:sbcl (or (sb-ext:posix-getenv name) "")
   #-:sbcl "")
+
+(defun internify (name)
+  (cond ((symbolp name) name)
+        ((stringp name) (intern (string-upcase name)))
+        (t (intern (string-upcase (write-to-string name))))))
+
+(defmacro symbolize (name)
+  `(quote
+    ,(if (symbolp name) name
+       (internify (eval name)))))
