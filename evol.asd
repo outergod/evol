@@ -26,12 +26,13 @@
                 :version "0.0.1"
                 :author "Alexander Kahl <e-user@fsfe.org>"
                 :license "GPLv3+"
-                :depends-on (:external-program :cl-fad :cl-ppcre)
+                :depends-on (:external-program :cl-fad :cl-ppcre :alexandria)
                 :components
                 ((:module "src"
                           :components
                           ((:file "package")
                            (:file "path"        :depends-on ("package"))
                            (:file "environment" :depends-on ("package"))
-                           (:file "shell"       :depends-on ("environment" "package"))
-                           (:file "target"      :depends-on ("shell" "path" "environment"))))))
+                           (:file "shell"       :depends-on ("environment"))
+                           (:file "target"      :depends-on ("shell" "path"))
+                           (:file "toplevel"    :depends-on ("target"))))))
