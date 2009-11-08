@@ -16,22 +16,14 @@
 
 (in-package :evol)
 
-;; (defun run-bash (&rest args)
-;;   (with-output-to-string (stream)
-;;                          (external-program:run "bash" (list "-c" (apply #'concatenate 'string args))
-;;                                                :output stream)))
-(defun run-command (cmd &key (target "") (sourcefn #'default-sourcefn)
-                             (environment *environment*) (verbose t))
-  "run-command cmd &key target sourcefn environment verbose => string
+(defun run-command (cmd &key (verbose t))
+  "run-command cmd &key verbose => string
 
-Run command line string cmd after interpolation against name of target,
-evaluation of target through sourcefn and honoring common quoting rules, in line
-with Bourne shell syntax. Returns stdout/stderr."
-  (let ((interpolcmd (interpolate-commandline cmd :target target :sourcefn sourcefn)))
-    (when verbose (format t "~a~%" interpolcmd))
+Run command line list cmd. Returns stdout/stderr."
+  (when verbose (format t "~a~%" cmd))
     (with-output-to-string (stream)
-                           (external-program:run (car interpolcmd) (cdr interpolcmd)
-                                                 :output stream))))
+                           (external-program:run (car cmd) (cdr cmd)
+                                                 :output stream)))
 
 (defun interpolate-commandline (cmd &key target sourcefn environment)
   "interpolate-commandline cmd &key target sourcefn environment => list
@@ -41,12 +33,15 @@ Bourne shell syntax block quoting, see split-commandline for details.
 Unquoted quotes are stripped after interpolation, single quotes prevent
 interpolation of their contained argument while double quotes don't.
 Returns list of split and interpolated arguments."
-  (flatten (mapcar #'(lambda (arg)
-                       (case (char arg 0)
-                         (#\' (string-trim "'" arg))
-                         (#\" (string-trim "\"" (interpolate-argument arg target sourcefn)))
-                         (t (interpolate-argument arg target sourcefn))))
-                   (split-commandline cmd))))
+  (alexandria:flatten
+   (mapcar #'(lambda (arg)
+               (case (char arg 0)
+                 (#\' (string-trim "'" arg))
+                 (#\" (split-commandline
+                       (string-trim "\"" (interpolate-argument arg target sourcefn environment))))
+                 (t   (split-commandline
+                       (interpolate-argument arg target sourcefn environment)))))
+           (split-commandline cmd))))
 
 (defun default-sourcefn (target modifier)
   "default-sourcefn target modifier => string
@@ -65,25 +60,23 @@ rules honoring double quotes [\"], single quotes ['] and regular whitespace."
 (defun interpolate-argument (argument target sourcefn environment)
   "interpolate-argument argument target sourcefn environment => list
 
-Expand % and $ matches in string argument in turn and re-split the resulting
-string into one or more new arguments, returning them in a list."
-  (split-commandline
-   (interpolate-$-argument
-    (interpolate-%-argument argument target sourcefn))))
+Expand all % and $ matches in string argument in turn."
+  (interpolate-$-argument
+   (interpolate-%-argument argument target sourcefn environment)))
 
 (defun interpolate-%-argument (argument target sourcefn environment)
   "interpolate-%-argument argument target sourcefn environment => string
 
 Expand all matches of % words in string argument honoring the special target and
 sourcefn matches and, for the rest, the environment."
-  (cl-ppcre:regex-replace-all "%([^ %]*)" argument
-                              (replace-with-region #'expand-%-match target sourcefn)))
+  (cl-ppcre:regex-replace-all "%([^ %()\"]*)" argument
+                              (replace-with-region #'expand-%-match target sourcefn environment)))
 
 (defun interpolate-$-argument (argument)
   "interpolate-$-argument argument => string
 
 Expand all matches of $ words in string argument."
-  (cl-ppcre:regex-replace-all "\\$([^ \\$]*)" argument
+  (cl-ppcre:regex-replace-all "\\$([^ \\$()\"]*)" argument
                               (replace-with-region #'expand-$-match)))
 
 (defun replace-with-region (replacefn &rest args)
@@ -132,19 +125,6 @@ Lookup match in the environment CL was started in returning the result."
 Splice list of strings into merged string having elements separated with string
 seperator."
   (if (listp list)
-      (format nil (concatenate 'string "~{~a~^" separator "~}")
+      (format nil (concatenate 'string "~{~s~^" separator "~}")
               list separator)
     list))
-
-(defun flatten (list)
-  "flatten list => list
-
-Remove all nesting from list by splicing LHS (car) lists into RHS (cdr)
-depth-first, e.g.
-(A (B C (D E) F) G) => (A B C D E F G)"
-  (cond ((null list) nil)
-        ((atom (car list))
-         (cons (car list)
-               (flatten (cdr list))))
-        (t (nconc (flatten (car list))
-                  (flatten (cdr list))))))
