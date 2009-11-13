@@ -37,8 +37,7 @@ Returns list of split and interpolated arguments."
    (mapcar #'(lambda (arg)
                (case (char arg 0)
                  (#\' (string-trim "'" arg))
-                 (#\" (split-commandline
-                       (string-trim "\"" (interpolate-argument arg target sourcefn environment))))
+                 (#\" (string-trim "\"" (interpolate-argument arg target sourcefn environment)))
                  (t   (split-commandline
                        (interpolate-argument arg target sourcefn environment)))))
            (split-commandline cmd))))
@@ -69,14 +68,14 @@ Expand all % and $ matches in string argument in turn."
 
 Expand all matches of % words in string argument honoring the special target and
 sourcefn matches and, for the rest, the environment."
-  (cl-ppcre:regex-replace-all "%([^ %()\"]*)" argument
+  (cl-ppcre:regex-replace-all "%({[^}%()\"]*}|[^ %()\"]*)" argument
                               (replace-with-region #'expand-%-match target sourcefn environment)))
 
 (defun interpolate-$-argument (argument)
   "interpolate-$-argument argument => string
 
 Expand all matches of $ words in string argument."
-  (cl-ppcre:regex-replace-all "\\$([^ \\$()\"]*)" argument
+  (cl-ppcre:regex-replace-all "\\$({[^}\\$()\"]}|[^ \\$()\"]*)" argument
                               (replace-with-region #'expand-$-match)))
 
 (defun replace-with-region (replacefn &rest args)
@@ -105,19 +104,21 @@ Act depending on string match:
   modify the deflation seperator, simply pass any non-whitespace character
   sequence after @ or <, e.g.
   [@,] for target := (foo bar baz) => \"foo,bar,baz\""
-  (let ((modifier (if (> (length match) 1)
-                      (subseq match 1) " ")))
-    (case (char match 0)
+  (let* ((stripped-match (string-left-trim "{" (string-right-trim "}" match)))
+         (modifier (if (> (length stripped-match) 1)
+                       (subseq stripped-match 1) " ")))
+    (case (char stripped-match 0)
       (#\% "%")
       (#\@ (deflate-string target modifier))
       (#\< (deflate-string (funcall sourcefn target modifier)))
-      (t (or (deflate-string (getenv match :env environment)) "")))))
+      (t (or (deflate-string
+               (getenv stripped-match :env environment)) "")))))
 
 (defun expand-$-match (match)
   "expand-$-match match => string
 
 Lookup match in the environment CL was started in returning the result."
-  (posix-getenv match))
+  (posix-getenv (string-left-trim "{" (string-right-trim "}" match))))
 
 (defun deflate-string (list &optional (separator " "))
   "deflate-string list &optional separator => string|object
