@@ -24,3 +24,11 @@ sbcl --noinform --disable-debugger --no-userinit \
      --eval "(push \"${HOME}/local/asdf/\" asdf:*central-registry*)" \
      --eval "(require 'evol)" \
      --eval "(evol:repl)"
+
+test -f evol || {echo "building failed"; exit 1}
+
+mv evol{,~}
+./evol~
+rm evol~
+
+ls -l evol

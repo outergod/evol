@@ -18,11 +18,11 @@
 
 (defparameter *default-evolution* nil)
 
-(defmacro devolution (name &rest args)
-  `(make-instance ',name ,@args))
+(defmacro devolution (name &rest args &key type &allow-other-keys)
+  `(make-instance ',type :name ,name ,@(remove-from-plist args :type)))
 
 (defmacro default (name)
-  `(setq *default-evolution* ',name))
+  `(setq *default-evolution* ,name))
 
 (defun repl ()
   "For now, this is just a stub for testing standalone execution with core

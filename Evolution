@@ -15,7 +15,7 @@
 ;;;; You should have received a copy of the GNU General Public License
 ;;;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(default evol)
-(devolution cl-exe :name "evol" :rule (list ':evol)
+(default "evol")
+(devolution "evol" :type cl-exe  :rule (list ':evol)
                    :init-package :evol
                    :toplevel (quote #'repl) :purify t)

@@ -1,29 +1,24 @@
-;; -*- mode: lisp -*-
-(asdf:oos 'asdf:load-op :evol)
+;;;; -*- mode: lisp -*-
+;;;; evol - showreel simple-1 evolution
+;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
+;;;; This file is part of evol.
+;;;; evol is free software; you can redistribute it and/or modify
+;;;; it under the terms of the GNU General Public License as published by
+;;;; the Free Software Foundation; either version 3 of the License, or
+;;;; (at your option) any later version.
+;;;;
+;;;; evol is distributed in the hope that it will be useful,
+;;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;;; GNU General Public License for more details.
+;;;;
+;;;; You should have received a copy of the GNU General Public License
+;;;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(evol:defenv cc "cc")
-(evol:defenv objects '("main.o" "program.o"))
-(evol:defenv program "main")
+(defenv cc "cc")
 
-(defun do-objects ()
-  (mapc #'(lambda (pathname)
-            (evol:run-command "%cc -c -o %@ %<"
-                              :target pathname
-                              :sourcefn #'(lambda (target modifier)
-                                            (declare (ignore modifier))
-                                            (evol:pathname-change-suffix "c" target))))
-        (evol:getenv 'objects)))
-
-(defun do-main ()
-  (do-objects)
-  (evol:run-command "%cc %< -o %@"
-                    :target (evol:getenv "program")
-                    :sourcefn #'(lambda (target modifier)
-                                  (declare (ignore target modifier))
-                                  (evol:getenv 'objects))))
-
-(defun do-all () (do-main))
-
-(defun do-clean ()
-  (evol:run-command "rm -f %@" :target (cons (evol:getenv 'program)
-                                             (evol:getenv 'objects))))
+(default "main")
+(devolution "main"    :type program :rule "%cc %< -o %@")
+(devolution "objects" :type breeder :of 'generic :spawn '("main.o" "program.o")
+                      :rule "%cc -c -o %@ %<")
+(devolution "clean"   :type definite :rule "rm -f %program %objects")
