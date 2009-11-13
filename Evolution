@@ -16,6 +16,6 @@
 ;;;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (default "evol")
-(devolution "evol" :type cl-exe  :rule (list ':evol)
+(devolution "evol" :type 'cl-exe  :rule (list ':evol)
                    :init-package :evol
                    :toplevel (quote #'repl) :purify t)

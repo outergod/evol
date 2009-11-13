@@ -19,7 +19,7 @@
 (defparameter *default-evolution* nil)
 
 (defmacro devolution (name &rest args &key type &allow-other-keys)
-  `(make-instance ',type :name ,name ,@(remove-from-plist args :type)))
+  `(make-instance ,type :name ,name ,@(remove-from-plist args :type)))
 
 (defmacro default (name)
   `(setq *default-evolution* ,name))

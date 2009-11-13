@@ -18,7 +18,7 @@
 (defenv cc "cc")
 
 (default "main")
-(devolution "main"    :type program :rule "%cc %< -o %@")
-(devolution "objects" :type breeder :of 'generic :spawn '("main.o" "program.o")
+(devolution "main"    :type 'program :rule "%cc %< -o %@" :deps '("objects"))
+(devolution "objects" :type 'breeder :of 'generic :spawn '("main.o" "program.o")
                       :rule "%cc -c -o %@ %<")
-(devolution "clean"   :type definite :rule "rm -f %program %objects")
+(devolution "clean"   :type 'definite :rule "rm -f %program %objects")
