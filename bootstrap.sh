@@ -18,6 +18,8 @@
 cwd=$(dirname $0)
 cd $cwd
 
+test -f evol && rm -f evol
+
 sbcl --noinform --disable-debugger --no-userinit \
      --eval "(require 'asdf)" \
      --eval "(push \"${cwd}/\" asdf:*central-registry*)" \
@@ -25,7 +27,7 @@ sbcl --noinform --disable-debugger --no-userinit \
      --eval "(require 'evol)" \
      --eval "(evol:repl)"
 
-test -f evol || {echo "building failed"; exit 1}
+test -f evol || { echo "building failed"; exit 1; }
 
 mv evol{,~}
 ./evol~
