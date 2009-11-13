@@ -17,13 +17,13 @@
 (in-package :evol)
 
 (defun run-command (cmd &key (verbose t))
-  "run-command cmd &key verbose => string
+  "run-command cmd &key verbose => integer
 
-Run command line list cmd. Returns stdout/stderr."
+Run command line list cmd. Exit status of invocation."
   (when verbose (format t "~a~%" cmd))
-    (with-output-to-string (stream)
-                           (external-program:run (car cmd) (cdr cmd)
-                                                 :output stream)))
+  (cadr (multiple-value-list 
+         (external-program:run (car cmd) (cdr cmd)
+                               :output *standard-output* :error t))))
 
 (defun interpolate-commandline (cmd &key target sourcefn environment)
   "interpolate-commandline cmd &key target sourcefn environment => list
@@ -97,7 +97,7 @@ searched additionally passing args."
 Act depending on string match:
 - % returns %
 - @ returns target
-- < returns result of invoking sourcefn against target
+- < returns result of invoking sourcefn against target and modifier
 - Any other sequence will be looked up in evol's environment returning the
   result, defaulting to an empty string
 - In case of @ and <, if target respectively sourcefn invocation returns a list,
