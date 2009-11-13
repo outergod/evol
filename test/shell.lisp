@@ -17,7 +17,7 @@
 (in-package :evol)
 
 (shadowing-import
- '(flatten deflate-string expand-%-match)
+ '(flatten deflate-string expand-%-match trim-{})
  (find-package :evol-test))
 
 (in-package :evol-test)
@@ -56,31 +56,36 @@
 
 (defparameter *environment* nil)
 
+(deftest trimming-{} ()
+  (mapcar #'(lambda (string)
+              (is (string= "foo" (trim-{} string))))
+          (list "{foo}" "{{foo}" "{foo}}")))
+
 (defixture shell-environment-fixture
   (:setup (setq *environment* (make-hash-table))
           (defenv test1 "42 23" *environment*)))
 
 (deftest expanding-%-matches ()
   (with-fixture shell-environment-fixture
-    (is (equal "%"
+    (is (string= "%"
                (expand-%-match "%" "" #'default-sourcefn *environment*)))
-    (is (equal "Layer 8"
+    (is (string= "Layer 8"
                (expand-%-match "@" "Layer 8" #'default-sourcefn *environment*)))
-    (is (equal "right"
+    (is (string= "right"
                (expand-%-match "<" "foo"
                                #'(lambda (input1 input2)
                                    (declare (ignore input2))
-                                   (if (equal "foo" input1) "right" "wrong"))
+                                   (if (string= "foo" input1) "right" "wrong"))
                                *environment*)))
-    (is (equal "right"
+    (is (string= "right"
                (expand-%-match "<--|WIN|" "foo"
                                #'(lambda (input1 input2)
                                    (declare (ignore input1))
-                                   (if (equal "--|WIN|" input2) "right" "wrong"))
+                                   (if (string= "--|WIN|" input2) "right" "wrong"))
                                *environment*)))
-    (is (equal "WIN AWESOME lol."
+    (is (string= "WIN AWESOME lol."
                (expand-%-match "<" ""
                                #'(lambda (input1 input2) (list "WIN" "AWESOME" "lol."))
                                *environment*)))
-    (is (equal "42 23"
+    (is (string= "42 23"
                (expand-%-match "test1" "" #'default-sourcefn *environment*)))))
