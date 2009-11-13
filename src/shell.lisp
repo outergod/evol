@@ -19,7 +19,7 @@
 (defun run-command (cmd &key (verbose t))
   "run-command cmd &key verbose => integer
 
-Run command line list cmd. Exit status of invocation."
+Run command line list cmd (blocking), returning exit status of invocation."
   (when verbose (format t "~a~%" cmd))
   (cadr (multiple-value-list 
          (external-program:run (car cmd) (cdr cmd)
