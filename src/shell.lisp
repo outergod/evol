@@ -111,7 +111,7 @@ Act depending on string match:
       (#\% "%")
       (#\@ (deflate-string target modifier))
       (#\< (deflate-string (funcall sourcefn target modifier)))
-      (t (or (getenv match environment) "")))))
+      (t (or (deflate-string (getenv match :env environment)) "")))))
 
 (defun expand-$-match (match)
   "expand-$-match match => string
@@ -125,6 +125,6 @@ Lookup match in the environment CL was started in returning the result."
 Splice list of strings into merged string having elements separated with string
 seperator."
   (if (listp list)
-      (format nil (concatenate 'string "~{~s~^" separator "~}")
+      (format nil (concatenate 'string "~{~a~^" separator "~}")
               list separator)
     list))

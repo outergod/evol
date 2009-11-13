@@ -18,8 +18,13 @@
 
 (defparameter *environment* (make-hash-table))
 
-(defun getenv (var &optional (environment *environment*))
-  (gethash (internify var) environment ""))
+(eval-when (:load-toplevel)
+  (defun getenv (var &key (env *environment*) (expanded t))
+    (let ((result (gethash (internify var) env "")))
+      (if (and expanded
+               (typep result 'evolvable))
+          (expand result)
+        result))))
 
 (defmacro defenv (var val &optional (environment *environment*))
   `(setf (gethash (symbolize ,var) ,environment) ,val))
