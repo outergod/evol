@@ -90,6 +90,12 @@ searched additionally passing args."
                                (svref reg-starts 0) (svref reg-ends 0))
              args)))
 
+(defun trim-{} (string)
+  "trim-{} string => string
+
+Trims {} brackets strings."
+  (string-left-trim "{" (string-right-trim "}" string)))
+
 (defun expand-%-match (match target sourcefn environment)
   "expand-%-match match target sourcefn environment => string
 
@@ -104,7 +110,7 @@ Act depending on string match:
   modify the deflation seperator, simply pass any non-whitespace character
   sequence after @ or <, e.g.
   [@,] for target := (foo bar baz) => \"foo,bar,baz\""
-  (let* ((stripped-match (string-left-trim "{" (string-right-trim "}" match)))
+  (let* ((stripped-match (trim-{} match))
          (modifier (if (> (length stripped-match) 1)
                        (subseq stripped-match 1) " ")))
     (case (char stripped-match 0)
@@ -118,7 +124,7 @@ Act depending on string match:
   "expand-$-match match => string
 
 Lookup match in the environment CL was started in returning the result."
-  (posix-getenv (string-left-trim "{" (string-right-trim "}" match))))
+  (posix-getenv (trim-{} match)))
 
 (defun deflate-string (list &optional (separator " "))
   "deflate-string list &optional separator => string|object
