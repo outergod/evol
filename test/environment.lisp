@@ -49,8 +49,8 @@
 
 (deftest getenv-default-nonexist ()
   (with-fixture env-environment-fixture
-    (is (stringp (getenv 'XXX *environment*)))
-    (is (string= "" (getenv 'XXX *environment*)))))
+    (is (stringp (getenv 'XXX :env *environment*)))
+    (is (string= "" (getenv 'XXX :env *environment*)))))
 
 (deftest put-string ()
   (with-fixture env-environment-fixture
@@ -61,4 +61,4 @@
 (deftest get-string ()
   (with-fixture env-environment-fixture
     (defenv foo "bar" *environment*)
-    (is (string= "bar" (getenv 'foo *environment*)))))
+    (is (string= "bar" (getenv 'foo :env *environment*)))))
