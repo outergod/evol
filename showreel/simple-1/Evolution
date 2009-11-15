@@ -18,7 +18,10 @@
 (defenv cc "cc")
 
 (default "main")
-(devolution "main"    :type 'program :rule "%cc %< -o %@" :deps '("objects"))
+(devolution "main"    :type 'program :rule "%cc %< -o %@" :deps '("objects")
+                      :sourcefn #'(lambda (target modifier)
+                                    (declare (ignore target modifier))
+                                    (getenv "objects")))
 (devolution "objects" :type 'breeder :of 'generic :spawn '("main.o" "program.o")
                       :rule "%cc -c -o %@ %<")
-(devolution "clean"   :type 'definite :rule "rm -f %program %objects")
+(devolution "clean"   :type 'generic :rule "rm -f %main %objects")
