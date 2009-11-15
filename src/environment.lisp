@@ -26,7 +26,7 @@
           (expand result)
         result))))
 
-(defmacro defenv (var val &optional (environment *environment*))
+(defmacro defenv (var val &optional (environment '*environment*))
   `(setf (gethash (symbolize ,var) ,environment) ,val))
 
 (defun posix-getenv (name)
