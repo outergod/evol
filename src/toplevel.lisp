@@ -29,8 +29,12 @@
 files."
   (in-package :evol)
   (load (cl-fad:pathname-as-file "Evolution"))
-  (format t "~a~%"
-          (evolve
-           (getenv (or *default-evolution*
-                       (car (hash-table-keys *environment*))))))
-  (sb-ext:quit))
+  (let ((code (evolve
+                (getenv (or *default-evolution*
+                            (car (hash-table-keys *environment*)))
+                        :expanded nil))))
+    (sb-ext:quit :unix-status
+                 (cond
+                  ((integerp code) code)
+                  ((null code) 1)
+                  (t 0)))))
