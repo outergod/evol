@@ -20,6 +20,10 @@
 
 (eval-when (:load-toplevel)
   (defun getenv (var &key (env *environment*) (expanded t))
+    "getenv var &key env expanded => mixed
+
+Return object stored for key var from hash :env and :expand the object for
+external command use if desired."
     (let ((result (gethash (internify var) env "")))
       (if (and expanded
                (typep result 'evolvable))
@@ -27,18 +31,31 @@
         result))))
 
 (defmacro defenv (var val &optional (environment '*environment*))
+  "defenv var val &optional environment => val
+
+Store val for key var in hash environment."
   `(setf (gethash (symbolize ,var) ,environment) ,val))
 
 (defun posix-getenv (name)
+  "posix-getenv name => string
+
+Return value for POSIX environmental key name, empty string if nothing found.
+Only implemented for sbcl right now."
   #+:sbcl (or (sb-ext:posix-getenv name) "")
   #-:sbcl "")
 
 (defun internify (name)
+  "internify name => symbol
+
+Return interned symbol for arbitrarily typed name; useful for use as hash keys."
   (cond ((symbolp name) name)
         ((stringp name) (intern (string-upcase name)))
         (t (intern (string-upcase (write-to-string name))))))
 
 (defmacro symbolize (name)
+  "symbolize name => symbol
+
+Quotes, transforms and interns unquoted variable names."
   `(quote
     ,(if (symbolp name) name
        (internify (eval name)))))
