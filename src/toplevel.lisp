@@ -19,14 +19,23 @@
 (defparameter *default-evolution* nil)
 
 (defmacro devolution (name &rest args &key type &allow-other-keys)
+  "devolution name &rest args &key type &allow-other-keys => object
+
+Top-level syntactic sugar macro to create evolvables. Name will be the
+environmental hash key, :type must be a valid class name and all other keys will
+be proxied to (make-instance)."
   `(make-instance ,type :name ,name ,@(remove-from-plist args :type)))
 
 (defmacro default (name)
+  "default name => mixed
+
+Top-level syntactic sugar macro to set the default evolvable to name."
   `(setq *default-evolution* ,name))
 
 (defun repl ()
-  "For now, this is just a stub for testing standalone execution with core
-files."
+  "repl => void
+
+For now, this is just a stub for testing standalone execution with core files."
   (in-package :evol)
   (load (cl-fad:pathname-as-file "Evolution"))
   (let ((code (evolve
