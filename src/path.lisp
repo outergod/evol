@@ -17,9 +17,15 @@
 (in-package :evol)
 
 (defun pathname-suffix-p (suffix pathspec)
+  "pathname-suffix-p suffix pathspec => boolean
+
+Predicate whether pathspec has file name suffix."
   (string= suffix (pathname-type (cl-fad:pathname-as-file pathspec))))
 
 (defun pathname-change-suffix (suffix pathspec)
+  "pathname-change-suffix suffix pathspec => string
+
+Change suffix of path name string pathspec; adds suffix if none present yet."
   (let ((pathname (cl-fad:pathname-as-file pathspec)))
     (setf (slot-value pathname 'type) suffix)
     (namestring pathname)))
