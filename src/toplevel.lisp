@@ -32,18 +32,53 @@ be proxied to (make-instance)."
 Top-level syntactic sugar macro to set the default evolvable to name."
   `(setq *default-evolution* ,name))
 
+(defun posix-argv ()
+  "posix-argv => list
+
+Return command line argument list. Implementation dependent."
+  #+sbcl sb-ext::*posix-argv*
+  #-sbcl nil)
+
+(defun parse-commandline (argv)
+  "parse-commandline argv => (args opts errors)
+
+Parse command line argument list argv with getopt and defined available
+options."
+  (getopt:getopt argv
+                 '(("verbose" :none nil))))
+
+(defun targets (args)
+  "targets args => list
+
+List of what to evolve based on list of command line args, default evolution and
+- as a last resort - the first defined evolvable."
+  (or (cdr args)
+      (list
+       (or *default-evolution*
+           (car (hash-table-keys *environment*))))))
+
+(defun print-help ()
+  "print-help => void
+
+Print help. Stubbed for now."
+  (format t "This could be helpful one day. Now it isn't. :)~%"))
+
 (defun repl ()
   "repl => void
 
 For now, this is just a stub for testing standalone execution with core files."
   (in-package :evol)
   (load (cl-fad:pathname-as-file "Evolution"))
-  (let ((code (evolve
-                (getenv (or *default-evolution*
-                            (car (hash-table-keys *environment*)))
-                        :expanded nil))))
-    (sb-ext:quit :unix-status
-                 (cond
-                  ((integerp code) code)
-                  ((null code) 1)
-                  (t 0)))))
+  (multiple-value-bind (args opts errors) (parse-commandline (posix-argv))
+    (declare (ignore opts))
+    (sb-ext:quit
+     :unix-status (if errors
+                      (progn (print-help) 1)
+                    (reduce #'logior
+                       (mapcar #'(lambda (name)
+                                   (let ((code (evolve (getenv name :expanded nil))))
+                                     (cond
+                                      ((integerp code) code)
+                                      ((null code) 1)
+                                      (t 0))))
+                               (targets args)))))))
