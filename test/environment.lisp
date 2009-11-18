@@ -54,11 +54,11 @@
 
 (deftest put-string ()
   (with-fixture env-environment-fixture
-    (defenv foo "bar" *environment*)
+    (defenv 'foo "bar" *environment*)
     (is (string= "bar" (gethash 'foo *environment* "")))
     (is (string= "bar" (gethash (symbolize foo) *environment* "")))))
 
 (deftest get-string ()
   (with-fixture env-environment-fixture
-    (defenv foo "bar" *environment*)
+    (defenv 'foo "bar" *environment*)
     (is (string= "bar" (getenv 'foo :env *environment*)))))
