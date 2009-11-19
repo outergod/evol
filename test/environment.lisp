@@ -28,11 +28,11 @@
 
 (defparameter *environment* nil)
 
-(defixture env-environment-fixture
-  (:setup (setq *environment* (make-hash-table))))
-
 (deftest environment-exists ()
   (is (boundp '*environment*)))
+
+(defixture env-environment-fixture
+  (:setup (setq env (make-hash-table))))
 
 (deftest internification ()
   (is (symbolp (internify "foo")))
@@ -40,25 +40,27 @@
   (is (symbolp (internify 4)))
   (is (symbolp (internify #\a))))
 
-(deftest symbolization ()
-  (internification)
-  (is (equal 'foo (symbolize foo)))
-  (is (equal 'foo (symbolize 'foo)))
-  (is (equal 'foo (symbolize "foo")))
-  (is (equal '|#\\F| (symbolize #\f))))
+(eval-when (:load-toplevel)
+  (deftest symbolization ()
+    (internification)
+    (is (equal 'foo (symbolize foo)))
+    (is (equal 'foo (symbolize 'foo)))
+    (is (equal 'foo (symbolize "foo")))
+    (is (equal '|#\\F| (symbolize #\f)))))
 
 (deftest getenv-default-nonexist ()
   (with-fixture env-environment-fixture
-    (is (stringp (getenv 'XXX :env *environment*)))
-    (is (string= "" (getenv 'XXX :env *environment*)))))
+    (is (stringp (getenv 'XXX :env env)))
+    (is (string= "" (getenv 'XXX :env env)))))
 
-(deftest put-string ()
-  (with-fixture env-environment-fixture
-    (defenv 'foo "bar" *environment*)
-    (is (string= "bar" (gethash 'foo *environment* "")))
-    (is (string= "bar" (gethash (symbolize foo) *environment* "")))))
+(eval-when (:load-toplevel)
+  (deftest put-string ()
+    (with-fixture env-environment-fixture
+      (defenv 'foo "bar" env)
+      (is (string= "bar" (gethash 'foo env "")))
+      (is (string= "bar" (gethash (symbolize foo) env ""))))))
 
 (deftest get-string ()
   (with-fixture env-environment-fixture
-    (defenv 'foo "bar" *environment*)
-    (is (string= "bar" (getenv 'foo :env *environment*)))))
+    (defenv 'foo "bar" env)
+    (is (string= "bar" (getenv 'foo :env env)))))
