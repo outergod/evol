@@ -3,10 +3,38 @@ Installation Instructions
 
 Copyright (C) 2009 Alexander Kahl
 
-   This file is free documentation; I give
-unlimited permission to copy, distribute and modify it.
+This file is free documentation;
+ I give unlimited permission to copy, distribute and modify it.
+
+
+Dependencies
+============
+At the time of writing, the current set of dependencies for building and/or
+hacking evol is:
+
+Foundation:
+- SBCL             | http://sbcl.sourceforge.net/
+- A Bourne-compatible shell, e.g. GNU Bash
+
+CL libraries (all asdf-install:able):
+- Alexandria       | http://www.cliki.net/Alexandria
+- external-program | http://www.cliki.net/external-program
+- CL-FAD           | http://www.cliki.net/CL-FAD
+- CL-PPCRE         | http://www.cliki.net/CL-PPCRE
+- getopt           | http://www.cliki.net/getopt
+
+Your distribution might provide some of these libraries but the names may
+differ, i.e. try to search for the libraries' names prefixed with `cl-` if not
+already present.
+
+While it is possible to start evol through a trampoline using sh and sbcl it is
+meant to be built and distributed as a standalone executable (please see below),
+in this case no dependencies but the most fundamental ones provided by the OS
+apply.
+
 
 Basic Installation
 ==================
-
-./bootstrap.sh :)
+Execute bootstrap.sh in the top-level directory of the extracted distribution
+tarball (or source code repository checkout). If everything goes well, you'll be
+presented a self-executable binary named `evol` in the same directory.

@@ -1,7 +1,32 @@
 evol - entrenched virtues of lisp / love reversed
 =================================================
-OK, there is not really much code here and only sometimes I find the spare time
-to continue my coding but the goal of this project is to provide an
-autotools-compatible (entrenching!) tool (or set of tools) that is able to
-replace the autotools without repeating errors made by other projects with
-similar ambitions.
+evol aims to be a compatible and full-fledged replacement for the GNU Autotools[1]
+stack targeted at coping with the Autotools' shortcomings while not repeating
+the mistakes made and still being made at comparable build tool projects.
+
+evol is completely written in Common Lisp and licensed under the
+GPLv3+[2]. Please see the file "COPYING" in the top-level directory of the
+distribution tarball or see the link at [2] if you didn't receive a copy along
+with this file.
+
+
+Alpha-Stage Warning
+===================
+evol is still a moving target, i.e. subject to change in terms of its top-level
+API so please don't use it for any production work yet.
+However you are very welcome to test and contribute!
+
+
+Installation
+============
+Please see file INSTALL.
+
+
+Links and References
+====================
+Homepage:           http://www.cliki.net/evol
+Hacking (stable):   http://github.com/e-user/evol
+Hacking (unstable): http://github.com/e-user/evol/tree/unstable
+
+[1] http://www.gnu.org/software/hello/manual/automake/Autotools-Introduction.html
+[2] http://www.gnu.org/licenses/gpl-3.0-standalone.html
