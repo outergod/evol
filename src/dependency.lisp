@@ -50,11 +50,11 @@ ones having dependencies and the complete set."
                        (cdr nodes)))))
     (set-difference nodes (acc (list) nodes) :key #'car :test #'equal)))
 
-(defun leave-nodes (nodes)
-  "leave-nodes nodes => node-list
+(defun leaf-nodes (nodes)
+  "leaf-nodes nodes => node-list
 
-Return all leave nodes in NODES.
-Leave nodes are simply the ones with no dependencies at all."
+Return all leaf nodes in NODES.
+Leaf nodes are simply the ones with no dependencies at all."
   (remove-if #'cdr nodes))
 
 (defun find-node (name nodes)
@@ -64,27 +64,30 @@ Find and return node designated by NAME in NODES."
   (find name nodes :key #'car :test #'equal))
 
 (defun resolve (root nodes)
-  "resolve root nodes => node-tree
+  "resolve root nodes => dag
 
-Try to resolve dependencies for ROOT node in NODES and return the dependency
-tree."
-  (labels ((acc (seen branch root)
-                (let ((node (car branch)))
-                  (cond
-                   ((null node) nil)
-                   ((null (find-node node nodes))
-                    (error (concatenate 'string "TODO unresolved " node)))
-                   ((member node seen :test #'equal)
-                    (error "TODO circular"))
-                   (t (if root
-                          (cons node
-                                (acc (cons node seen) (cdr branch) nil))
-                        (cons (acc seen (find-node node nodes) t)
-                              (acc seen (cdr branch) nil))))))))
-    (acc (list) root t)))
+Try to resolve dependencies for ROOT node in NODES and return its dependency
+dag (directed acyclic graph)."
+  (let ((nodes (copy-tree nodes)))
+    (labels ((acc (seen branch root)
+                  (let ((name (car branch))
+                        (rest (cdr branch)))
+                    (cond
+                     ((consp name) branch)             ; ^= we've already been here
+                     ((null name) nil)                 ; ^= end of a branch
+                     ((null (find-node name nodes))    ; speaks for itself
+                      (error (concatenate 'string "TODO unresolved " name)))
+                     ((member name seen :test #'equal) ; so does this
+                      (error "TODO circular"))
+                     (t (if root                       ; new branch
+                            (rplacd branch             ; we want eql nodes, i.e. undirected cycles
+                                    (acc (cons name seen) rest nil))
+                          (cons (acc seen (find-node name nodes) t)
+                                (acc seen rest nil))))))))
+      (acc (list) root t))))
 
 (defun resolve-all (nodes &optional (roots nodes))
-  "resolve-all nodes &optional (roots nodes) => list of node-trees
+  "resolve-all nodes &optional (roots nodes) => list of dags
 
 Resolve list of distinct ROOTS (or, by default, everything) in node-list NODES."
   (mapcar #'(lambda (node)
@@ -92,7 +95,7 @@ Resolve list of distinct ROOTS (or, by default, everything) in node-list NODES."
           roots))
 
 (defun resolve-roots (nodes)
-  "resolve-roots nodes => list of node-trees
+  "resolve-roots nodes => list of dags
 
 Resolve node-list NODES for all its root-nodes."
   (resolve-all nodes (root-nodes nodes)))
