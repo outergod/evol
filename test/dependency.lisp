@@ -17,7 +17,8 @@
 (in-package :evol)
 
 (shadowing-import
- '(make-dependency-nodes)
+ '(dependency-nodes-hashtable dependency-node root-nodes leaf-nodes find-node
+                              resolve)
  (find-package :evol-test))
 
 (in-package :evol-test)
@@ -26,12 +27,14 @@
 (defsuite dependency)
 (in-suite dependency)
 
+(defparameter env nil)
+
 (defixture dep-environment-fixture
   (:setup (setq env (make-hash-table))
-          (setf (gethash 'a env) 1
-                (gethash 'b env) 2
-                (gethash 'foo env) 'bar
-                (gethash 'baz env) 'bop)))
+          (setf (gethash 'a env) (list 1 'foo 3)
+                (gethash 'b env) (list 3)
+                (gethash 'foo env) (list 'foo 'bop)
+                (gethash 'baz env) (list 'bop 3))))
 
 ;; Thanks to lisp-unit
 (defun set-equal (l1 l2 &key (test #'equal))
@@ -40,13 +43,66 @@
        (subsetp l1 l2 :test test)
        (subsetp l2 l1 :test test)))
 
-(deftest dependency-nodes ()
+(defun make-predicate-car (predicate)
+  #'(lambda (elt)
+      (and (consp elt)
+           (funcall predicate (car elt)))))
+
+(deftest test-dependency-node ()
+  (with-fixture dep-environment-fixture
+    (mapc #'(lambda (expected key)
+              (is expected
+                  (dependency-node #'car #'cdr
+                                   (gethash key env))))
+          (list '(1 'foo 3)
+                '(3)
+                '(foo bop)
+                '(bop 3))
+          (list 'a 'b 'foo 'baz))))
+
+(deftest test-dependency-nodes ()
   (with-fixture dep-environment-fixture
     (mapc #'(lambda (expected predicate)
               (is (set-equal expected
-                             (make-dependency-nodes env predicate))))
-          (list '((1) (2))
-                '((bar) (bop)))
-          (list #'integerp
-                #'symbolp))))
+                             (dependency-nodes-hashtable predicate #'car #'cdr env))))
+          (list '((3) (1 foo 3))
+                '((foo bop) (bop 3)))
+          (list (make-predicate-car #'integerp)
+                (make-predicate-car #'symbolp)))))
 
+(deftest test-root-nodes ()
+  (is (set-equal '((1 foo 3))
+                 (root-nodes 
+                  (dependency-nodes-hashtable #'identity #'car #'cdr env)))))
+
+(deftest test-leaf-nodes ()
+  (is (set-equal '((3))
+                 (leaf-nodes 
+                  (dependency-nodes-hashtable #'identity #'car #'cdr env)))))
+
+(deftest test-find-node ()
+  (with-fixture dep-environment-fixture
+    (let ((nodes (dependency-nodes-hashtable #'identity #'car #'cdr env)))
+      (mapc #'(lambda (expected name)
+                (is (set-equal expected
+                               (find-node name nodes))))
+            (list '(1 foo 3)
+                  '(3)
+                  '(foo bop)
+                  '(bop 3))
+            (list '1 '3 'foo 'bop)))))
+
+(deftest resolution ()
+  (with-fixture dep-environment-fixture
+    (let ((nodes (dependency-nodes-hashtable #'identity #'car #'cdr env)))
+      (mapc #'(lambda (expected root)
+                (is (set-equal expected
+                               (resolve root nodes))))
+            (list '(3)
+                  '(bop (3))
+                  '(foo (bop (3)))
+                  '(1 (foo (bop (3))) (3)))
+            (list (gethash 'b env)
+                  (gethash 'baz env)
+                  (gethash 'foo env)
+                  (gethash 'a env))))))
