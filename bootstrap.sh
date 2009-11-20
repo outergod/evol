@@ -18,8 +18,10 @@
 cwd=$(dirname $0)
 cd $cwd
 
+echo "Deleting old executable..."
 test -f evol && rm -f evol
 
+echo "Bootstrap Phase 1..."
 sbcl --noinform --disable-debugger --no-userinit \
      --eval "(require 'asdf)" \
      --eval "(push \"${cwd}/\" asdf:*central-registry*)" \
@@ -29,8 +31,10 @@ sbcl --noinform --disable-debugger --no-userinit \
 
 test -f evol || { echo "building failed"; exit 1; }
 
+echo "Bootstrap Phase 2..."
 mv evol{,~}
 ./evol~
 rm evol~
 
 ls -l evol
+echo "Done. Have Fun!"
