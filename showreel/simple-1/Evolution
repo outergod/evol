@@ -22,6 +22,6 @@
                       :sourcefn #'(lambda (target modifier)
                                     (declare (ignore target modifier))
                                     (getenv "objects")))
-(devolution "objects" :type 'breeder :of 'generic :spawn '("main.o" "program.o")
+(devolution "objects" :type 'hive :of 'generic :spawn '("main.o" "program.o")
                       :rule "%cc -c -o %@ %<")
 (devolution "clean"   :type 'generic :rule "rm -f %objects %main")
