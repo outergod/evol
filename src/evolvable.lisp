@@ -1,4 +1,4 @@
-;;;; evol - target.lisp
+;;;; evol - evolvable.lisp
 ;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
@@ -97,17 +97,20 @@ Returns a suitable form of the evolvable for %-style rule expansion.")
   (:method ((evol evolvable)) (name evol)))
 
 (defgeneric evolve (evolvable)
-  (:documentation "Evolve this, whatever that may be"))
+  (:documentation "Evolve this, whatever that may be")
+  (:method :before ((evol evolvable))
+    (setf (hatching evol) t))
+  (:method :after ((evol evolvable))
+    (setf (hatched evol) t))
+  (:method :around ((evol evolvable))
+    (with-slot-enhanced-environment ((env-slots evol) evol)
+      (call-next-method))))
 
-(defmethod evolve :before ((evol evolvable))
-  (setf (hatching evol) t))
+(defun evolvable-p (object)
+  "evolvable-p object => boolean
 
-(defmethod evolve :after ((evol evolvable))
-  (setf (hatched evol) t))
-
-(defmethod evolve :around ((evol evolvable))
-  (with-slot-enhanced-environment ((env-slots evol) evol)
-                                  (call-next-method)))
+Tell whether OBJECT is an EVOLVABLE."
+  (typep object 'evolvable))
 
 
 ;;; virtual class
