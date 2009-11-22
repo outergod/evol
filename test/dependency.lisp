@@ -18,7 +18,7 @@
 
 (shadowing-import
  '(dependency-nodes-hashtable dependency-node root-nodes leaf-nodes find-node
-                              resolve)
+                              resolve-dag resolve-queue)
  (find-package :evol-test))
 
 (in-package :evol-test)
@@ -29,12 +29,22 @@
 
 (defparameter env nil)
 
-(defixture dep-environment-fixture
+(defixture dep-environment-fixture-1
   (:setup (setq env (make-hash-table))
           (setf (gethash 'a env) (list 1 'foo 3)
                 (gethash 'b env) (list 3)
                 (gethash 'foo env) (list 'foo 'bop)
                 (gethash 'baz env) (list 'bop 3))))
+
+(defixture dep-environment-fixture-2
+  (:setup (setq env (make-hash-table))
+          (setf (gethash 'root env) (list "root" "lvl1:1" "lvl1:2")
+                (gethash 'lvl1-1 env) (list "lvl1:1" "lvl2:1")
+                (gethash 'lvl1-2 env) (list "lvl1:2" "lvl2:1" "lvl4:1")
+                (gethash 'lvl2-1 env) (list "lvl2:1" "lvl3:1" "lvl3:2")
+                (gethash 'lvl3-1 env) (list "lvl3:1")
+                (gethash 'lvl3-2 env) (list "lvl3:2")
+                (gethash 'lvl4-1 env) (list "lvl4:1"))))
 
 ;; Thanks to lisp-unit
 (defun set-equal (l1 l2 &key (test #'equal))
@@ -49,7 +59,7 @@
            (funcall predicate (car elt)))))
 
 (deftest test-dependency-node ()
-  (with-fixture dep-environment-fixture
+  (with-fixture dep-environment-fixture-1
     (mapc #'(lambda (expected key)
               (is expected
                   (dependency-node #'car #'cdr
@@ -61,7 +71,7 @@
           (list 'a 'b 'foo 'baz))))
 
 (deftest test-dependency-nodes ()
-  (with-fixture dep-environment-fixture
+  (with-fixture dep-environment-fixture-1
     (mapc #'(lambda (expected predicate)
               (is (set-equal expected
                              (dependency-nodes-hashtable predicate #'car #'cdr env))))
@@ -81,7 +91,7 @@
                   (dependency-nodes-hashtable #'identity #'car #'cdr env)))))
 
 (deftest test-find-node ()
-  (with-fixture dep-environment-fixture
+  (with-fixture dep-environment-fixture-1
     (let ((nodes (dependency-nodes-hashtable #'identity #'car #'cdr env)))
       (mapc #'(lambda (expected name)
                 (is (set-equal expected
@@ -92,12 +102,12 @@
                   '(bop 3))
             (list '1 '3 'foo 'bop)))))
 
-(deftest resolution ()
-  (with-fixture dep-environment-fixture
+(deftest resolution-dag-1 ()
+  (with-fixture dep-environment-fixture-1
     (let ((nodes (dependency-nodes-hashtable #'identity #'car #'cdr env)))
       (mapc #'(lambda (expected root)
                 (is (set-equal expected
-                               (resolve root nodes))))
+                               (resolve-dag root nodes))))
             (list '(3)
                   '(bop (3))
                   '(foo (bop (3)))
@@ -106,3 +116,20 @@
                   (gethash 'baz env)
                   (gethash 'foo env)
                   (gethash 'a env))))))
+
+(deftest resolution-dag-2 ()
+  (with-fixture dep-environment-fixture-2
+    (let ((nodes (dependency-nodes-hashtable #'identity #'car #'cdr env)))
+      (is (set-equal '("root" ("lvl1:1" ("lvl2:1" ("lvl3:1") ("lvl3:2")))
+                       ("lvl1:2" ("lvl2:1" ("lvl3:1") ("lvl3:2")) ("lvl4:1")))
+                     (resolve-dag
+                      (car (member "root" nodes :key #'car :test #'equal))
+                      nodes))))))
+
+(deftest resolution-queue-2 ()
+  (with-fixture dep-environment-fixture-2
+    (let ((nodes (dependency-nodes-hashtable #'identity #'car #'cdr env)))
+      (is (equal '("lvl3:1" "lvl3:2" "lvl2:1" "lvl1:1" "lvl4:1" "lvl1:2" "root")
+                 (resolve-queue
+                  (car (member "root" nodes :key #'car :test #'equal))
+                  nodes))))))

@@ -63,11 +63,38 @@ Leaf nodes are simply the ones with no dependencies at all."
 Find and return node designated by NAME in NODES."
   (find name nodes :key #'car :test #'equal))
 
-(defun resolve (root nodes)
+(defun resolve-queue (root nodes)
+  "resolve-queue root nodes => queue
+
+Try to resolve dependencies for ROOT node in NODES and return its dependency
+queue.
+
+Queues are suitable for sequential building only."
+  (labels ((acc (rec seen branch root)
+                (let ((name (car branch))
+                      (rest (cdr branch)))
+                  (cond
+                   ((null name) rec)                 ; ^= end of a branch
+                   ((null (find-node name nodes))    ; speaks for itself
+                    (error (concatenate 'string "TODO unresolved " name)))
+                   ((member name seen :test #'equal) ; so does this
+                    (error "TODO circular"))
+                   (t (if root                       ; new branch
+                          (if (member name rec)      ; ^= we've already been here
+                              rec
+                            (nconc (acc rec (cons name seen) rest nil)
+                                   (list name)))
+                        (acc (acc rec seen (find-node name nodes) t)
+                             seen rest nil)))))))
+    (acc (list) (list) root t)))
+
+(defun resolve-dag (root nodes)
   "resolve root nodes => dag
 
 Try to resolve dependencies for ROOT node in NODES and return its dependency
-dag (directed acyclic graph)."
+dag (directed acyclic graph).
+
+Dags are suitable for parallel building."
   (let ((nodes (copy-tree nodes)))
     (labels ((acc (seen branch root)
                   (let ((name (car branch))
@@ -86,16 +113,17 @@ dag (directed acyclic graph)."
                                 (acc seen rest nil))))))))
       (acc (list) root t))))
 
-(defun resolve-all (nodes &optional (roots nodes))
-  "resolve-all nodes &optional (roots nodes) => list of dags
+(defun resolve-all (nodes resfn &optional (roots nodes))
+  "resolve-all nodes resfn &optional (roots nodes) => list of dags or queues
 
-Resolve list of distinct ROOTS (or, by default, everything) in node-list NODES."
+Resolve list of distinct ROOTS (or, by default, everything) in node-list NODES
+using resfn."
   (mapcar #'(lambda (node)
-              (resolve node nodes))
+              (funcall resfn node nodes))
           roots))
 
-(defun resolve-roots (nodes)
-  "resolve-roots nodes => list of dags
+(defun resolve-roots (nodes resfn)
+  "resolve-roots nodes resfn => list of dags or queues
 
-Resolve node-list NODES for all its root-nodes."
-  (resolve-all nodes (root-nodes nodes)))
+Resolve node-list NODES using resfn for all its root-nodes."
+  (resolve-all nodes resfn (root-nodes nodes)))
