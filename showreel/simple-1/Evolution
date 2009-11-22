@@ -23,5 +23,8 @@
                                     (declare (ignore target modifier))
                                     (getenv "objects")))
 (devolution "objects" :type 'hive :of 'generic :spawn '("main.o" "program.o")
+                      :sourcefn #'(lambda (target modifier)
+                                    (declare (ignore modifier))
+                                    (pathname-change-suffix "c" target))
                       :rule "%cc -c -o %@ %<")
 (devolution "clean"   :type 'generic :rule "rm -f %objects %main")
