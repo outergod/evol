@@ -76,7 +76,8 @@ For now, this is just a stub for testing standalone execution with core files."
                       (progn (print-help) 1)
                     (reduce #'logior
                        (mapcar #'(lambda (name)
-                                   (let ((code (evolve (getenv name :expanded nil))))
+                                   (let ((code (breed (make-instance 'breeder)
+                                                      (getenv name :expanded nil))))
                                      (cond
                                       ((integerp code) code)
                                       ((null code) 1)

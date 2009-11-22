@@ -37,4 +37,5 @@
                            (:file "dependency"  :depends-on ("package"))
                            (:file "shell"       :depends-on ("environment"))
                            (:file "evolvable"   :depends-on ("shell" "path"))
-                           (:file "toplevel"    :depends-on ("evolvable" "util"))))))
+                           (:file "breeder"     :depends-on ("dependency" "evolvable"))
+                           (:file "toplevel"    :depends-on ("breeder" "util"))))))
