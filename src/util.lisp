@@ -23,7 +23,17 @@ Return command line argument list. Implementation dependent."
   #+sbcl sb-ext::*posix-argv*
   #-sbcl nil)
 
-;; (defun find-tree (item tree &rest args &key key test test-not)
-;;   (if (not (consp tree))
-;;       nil
-;;     (or (find-tree item (car tree args
+(defun mapthread (function list &rest more-lists)
+  "mapthread function list &rest more-lists => list
+
+Apply FUNCTION against each set of elements from LIST and MORE-LISTS just like
+MAPCAR but use a new thread for each call. Returns result list from joining all
+threads created that way."
+  (mapcar #'bt:join-thread
+          (apply #'mapcar #'(lambda (&rest args)
+                              (bt:make-thread #'(lambda ()
+                                                  (apply function
+                                                         (car args)
+                                                         (cdr args)))
+                                              :name (gensym)))
+                 list more-lists)))
