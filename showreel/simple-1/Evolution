@@ -26,5 +26,5 @@
                       :sourcefn #'(lambda (target modifier)
                                     (declare (ignore modifier))
                                     (pathname-change-suffix "c" target))
-                      :rule "%cc -c -o %@ %<")
+                      :rule "%cc ${CFLAGS} -c -o %@ %<")
 (devolution "clean"   :type 'generic :rule "rm -f %objects %main")
