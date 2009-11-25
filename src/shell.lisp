@@ -20,7 +20,9 @@
   "run-command cmd &key verbose => integer
 
 Run command line list cmd (blocking), returning exit status of invocation."
-  (when verbose (format t "~a~%" cmd))
+  (when verbose
+    (let ((*print-pretty* nil))
+      (format t "~a~%" cmd)))
   (cadr (multiple-value-list 
          (external-program:run (car cmd) (cdr cmd)
                                :output *standard-output* :error t))))
