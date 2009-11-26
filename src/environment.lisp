@@ -49,8 +49,8 @@ Only implemented for sbcl right now."
 
 Return interned symbol for arbitrarily typed name; useful for use as hash keys."
   (cond ((symbolp name) name)
-        ((stringp name) (intern (string-upcase name)))
-        (t (intern (string-upcase (write-to-string name))))))
+        ((stringp name) (intern (string-upcase name) 'evol))
+        (t (intern (string-upcase (write-to-string name)) 'evol))))
 
 (defmacro symbolize (name)
   "symbolize name => symbol
