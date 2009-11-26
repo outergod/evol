@@ -69,9 +69,12 @@ all slot names/values as key/values from symbol list slots in object."
               :initarg  :env-slots
               :initform nil
               :documentation "List of slots to lexically bind to the environment during evolution")
-   (hatching  :accessor hatching
-              :initform nil
-              :documentation "Whether evolution has started")
+   (mutex     :reader   mutex
+              :initform (bt:make-lock)
+              :documentation "Mutex for the wait queue")
+   (waitqueue :reader   waitqueue
+              :initform (bt:make-condition-variable)
+              :documentation "Wait queue used for multithreaded breeding")
    (hatched   :accessor hatched
               :initform nil
               :documentation "Whether evolution is finished"))
@@ -96,13 +99,11 @@ Printing evolvable-derived objects must simply return their names."
 Returns a suitable form of the evolvable for %-style rule expansion.")
   (:method ((evol evolvable)) (name evol)))
 
-(defgeneric evolve (evolvable)
+(defgeneric evolve (evolvable &rest args &key &allow-other-keys)
   (:documentation "Evolve this, whatever that may be")
-  (:method :before ((evol evolvable))
-    (setf (hatching evol) t))
-  (:method :after ((evol evolvable))
+  (:method :after ((evol evolvable) &rest args &key &allow-other-keys)
     (setf (hatched evol) t))
-  (:method :around ((evol evolvable))
+  (:method :around ((evol evolvable) &rest args &key &allow-other-keys)
     (with-slot-enhanced-environment ((env-slots evol) evol)
       (call-next-method))))
 
@@ -119,7 +120,7 @@ Tell whether OBJECT is an EVOLVABLE."
 beautification through grouping and/or naming by having its dependencies
 evolve."))
 
-(defmethod evolve ((virt virtual)) t)
+(defmethod evolve ((virt virtual) &rest args &key &allow-other-keys) t)
 
 
 ;;; hive class
@@ -182,7 +183,7 @@ post-validate their evolution."))
 (defgeneric evolved-p (checkable)
   (:documentation "Check that given evolution has been evolved properly"))
 
-(defmethod evolve :around ((evol checkable))
+(defmethod evolve :around ((evol checkable) &rest args &key &allow-other-keys)
   (or (evolved-p evol)
       (call-next-method)))
 
@@ -204,8 +205,10 @@ either containing machince code themselves or referring to an interpreter for
 source code contained within. This class ensures its file is executable after
 creation."))
 
-(defmethod evolve :after ((exe executable))
-  (run-command (interpolate-commandline "chmod +x %@" :target (name exe))))
+(defmethod evolve :after ((exe executable) &rest args &key &allow-other-keys)
+  (run-command
+   (interpolate-commandline "chmod +x %@" :target (name exe))
+   :formatfn (getf args 'formatfn #'format)))
 
 
 ;;;; Generic
@@ -218,11 +221,12 @@ creation."))
 program through interpolating the rule and source function contained within
 honoring common quoting rules in line with Bourne shell syntax."))
 
-(defmethod evolve ((trans generic-transformator))
+(defmethod evolve ((trans generic-transformator) &rest args &key &allow-other-keys)
   (run-command
    (interpolate-commandline (rule trans)
                             :target (name trans) :sourcefn (sourcefn trans)
-                            :environment *environment*)))
+                            :environment *environment*)
+   :formatfn (getf args 'formatfn #'format)))
 
 
 ;;; generic class
@@ -248,7 +252,7 @@ grouped as a single argument to be passed to (eval) so no special quoting aside
 from \\\" is required.
 Variable expansion is only performed against sourcefn's return forms."))
 
-(defmethod evolve ((trans cl-transformator))
+(defmethod evolve ((trans cl-transformator) &rest args &key &allow-other-keys)
   (run-command
    (nconc (split-commandline "sbcl --noinform --disable-debugger")
           (cl-forms
