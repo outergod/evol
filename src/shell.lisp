@@ -16,13 +16,13 @@
 
 (in-package :evol)
 
-(defun run-command (cmd &key (verbose t))
-  "run-command cmd &key verbose => integer
+(defun run-command (cmd &key (verbose t) (formatfn #'format))
+  "run-command cmd &key verbose formatfn => integer
 
 Run command line list cmd (blocking), returning exit status of invocation."
   (when verbose
     (let ((*print-pretty* nil))
-      (format t "~a~%" cmd)))
+      (funcall formatfn t "~a~%" cmd)))
   (cadr (multiple-value-list 
          (external-program:run (car cmd) (cdr cmd)
                                :output *standard-output* :error t))))
