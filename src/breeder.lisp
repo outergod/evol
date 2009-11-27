@@ -26,6 +26,11 @@
      (cons (,@body1)
            result)))
 
+(defmacro with-new-lock-held (var &body body)
+  `(let ((,var (bt:make-lock (symbol-name (gensym)))))
+     (bt:with-lock-held (,var)
+       ,@body)))
+
 (defun safe-getenv (lock var)
   "safe-getenv lock var => mixed
 
@@ -67,10 +72,38 @@ derive from Patron for thread-pooled queue working."))
   (unwind-protect (call-next-method)
     (patron:stop-patron swarm :wait nil :kill nil)))
 
+(defgeneric enqueue-breeding (swarm evolvable stream-lock)
+  (:documentation "Push breeding an evolvable into the worker queue and wait for
+the job to finish")
+  (:method ((swarm swarm) (evol evolvable) stream-lock)
+    (with-new-lock-held job-lock
+      (let* ((job-waitqueue (bt:make-condition-variable))
+             (finishfn #'(lambda (job)
+                           (declare (ignore job))
+                           (bt:with-lock-held (job-lock)
+                             (bt:condition-notify job-waitqueue))))
+             (formatfn #'(lambda (destination control-string &rest format-arguments)
+                           (declare (ignore destination))
+                           (safe-format swarm stream-lock control-string format-arguments)))
+             (job (patron:submit-job
+                   swarm
+                   (make-instance 'patron:job
+                                  :function #'(lambda ()
+                                                (evolve evol :formatfn formatfn))
+                                  :result-report-function finishfn
+                                  :error-report-function  finishfn))))
+        (bt:condition-wait job-waitqueue job-lock)
+        (if (slot-boundp job 'condition)
+            (error (patron:condition-of job))
+          (patron:result-of job))))))
+
 (defmethod breed ((swarm swarm) (evol evolvable))
   "breed swarm evolvable => dag
 
-Swarm-based evolution. TODO: Explain more here"
+Swarm-based evolution. Works through creating new threads per edge / dag node
+while locking the evolvables encountered. Evolution is forwarded to the Patron
+queue that works by using a thread pool itself so welcome to deadlock
+wonderland!"
   (let ((stream-lock (bt:make-lock "stream"))
         (env-lock    (bt:make-lock "env")))
     (labels ((acc (branch)
@@ -79,13 +112,13 @@ Swarm-based evolution. TODO: Explain more here"
                     (let* ((evol (safe-getenv env-lock (car branch)))
                            (evol-lock (mutex evol)))
                       (bt:with-lock-held (evol-lock)
-                        (if (hatched evol) t
-                          (eval-reverse-cons 
-                           (evolve evol :formatfn #'(lambda (destination control-string &rest format-arguments)
-                                                      (declare (ignore destination))
-                                                      (safe-format swarm stream-lock control-string format-arguments)))
+                        (if (hatched evol)
+                            t
+                          (eval-reverse-cons
+                           (enqueue-breeding swarm evol stream-lock)
                            (mapthread #'(lambda (branch)
                                           (acc branch))
                                       (cdr branch)))))))))
      (with-dependency-nodes nodes
+       (reinitialize-instance swarm :job-capacity (length nodes))
        (acc (resolve-dag (find-node (name evol) nodes) nodes))))))
