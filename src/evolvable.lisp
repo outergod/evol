@@ -81,37 +81,67 @@ all slot names/values as key/values from symbol list slots in object."
   (:documentation "Base class for all evolvables."))
 
 (defmethod initialize-instance :after ((evol evolvable) &rest initargs)
-  "initialize-instance :after evolvable &rest initargs => (void)
+  "initialize-instance :after evol &rest initargs => evol
 
 Also register evolvable in the evol *environment*"
   (declare (ignore initargs))
   (setf (gethash (internify (name evol)) *environment*) evol))
 
 (defmethod print-object ((evol evolvable) stream)
-  "print-object evolvable stream => (void)
+  "print-object evolvable stream => nil
 
 Printing evolvable-derived objects must simply return their names."
   (princ (name evol) stream))
 
 (defgeneric expand (evolvable)
-  (:documentation "expand evolvable => mixed
+  (:documentation "expand evolvable => string
 
-Returns a suitable form of the evolvable for %-style rule expansion.")
-  (:method ((evol evolvable)) (name evol)))
+Return a suitable form of the evolvable for %-style rule expansion.")
+  (:method ((evol evolvable))
+    "expand evol => string
+
+Expand EVOL to its name."
+    (name evol)))
 
 (defgeneric evolve (evolvable &rest args &key &allow-other-keys)
   (:documentation "Evolve this, whatever that may be")
   (:method :after ((evol evolvable) &rest args &key &allow-other-keys)
+    "evolve :after evol &rest args &key &allow-other-keys => t
+
+Mark evolvable EVOL hatched."
     (setf (hatched evol) t))
   (:method :around ((evol evolvable) &rest args &key &allow-other-keys)
+    "evolve :around evol &rest args &key &allow-other-keys => context
+
+Call the next method in scope of a copy of *ENVIRONMENT* enhanced by all slots
+in EVOL specified by ENV-SLOTS."
     (with-slot-enhanced-environment ((env-slots evol) evol)
       (call-next-method))))
+
+(defgeneric reset (evolvable)
+  (:documentation "reset evolvable => result
+
+Reset evolution of EVOLVABLE.")
+  (:method ((evol evolvable))
+    "reset evolvable => nil
+
+Set slot HATCHED back to nil. Useful for development (only?)."
+    (setf (hatched evol) nil)))
 
 (defun evolvable-p (object)
   "evolvable-p object => boolean
 
 Tell whether OBJECT is an EVOLVABLE."
   (typep object 'evolvable))
+
+(defun reset-evolvables (&optional (env *environment*))
+  "reset-evolvables env => evolvables-list
+
+RESET all evolvables in hashtable ENV. Useful for development."
+  (mapc #'(lambda (object)
+            (reset object))
+          (remove-if-not #'evolvable-p
+                         (alexandria:hash-table-values env))))
 
 
 ;;; virtual class
