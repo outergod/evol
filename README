@@ -5,9 +5,13 @@ stack targeted at coping with the Autotools' shortcomings while not repeating
 the mistakes made and still being made at comparable build tool projects.
 
 evol is completely written in Common Lisp and licensed under the
-GPLv3+[2]. Please see the file "COPYING" in the top-level directory of the
+GPLv3+[2]. Please see the file COPYING in the top-level directory of the
 distribution tarball or see the link at [2] if you didn't receive a copy along
 with this file.
+
+Since distribution in binary form requires static linking of Common Lisp
+libraries, distribution *must* include the file CREDITS also found in mentioned
+top-level directory to respect copyright of the respective holders.
 
 
 Alpha-Stage Warning
