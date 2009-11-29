@@ -17,7 +17,7 @@
 (in-package :evol)
 
 (shadowing-import
- '(posix-getenv internify symbolize)
+ '(posix-getenv internify)
  (find-package :evol-test))
 
 (in-package :evol-test)
@@ -39,12 +39,6 @@
   (is (symbolp (internify 'foo)))
   (is (symbolp (internify 4)))
   (is (symbolp (internify #\a))))
-
-(deftest symbolization ()
-  (internification)
-  (is (equal 'foo (symbolize 'foo)))
-  (is (equal 'foo (symbolize "foo")))
-  (is (equal '|#\\F| (symbolize #\f))))
 
 (deftest getenv-default-nonexist ()
   (with-fixture env-environment-fixture
