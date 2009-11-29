@@ -120,7 +120,8 @@ Act depending on string match:
       (#\@ (deflate-string target modifier))
       (#\< (deflate-string (funcall sourcefn target modifier)))
       (t (or (deflate-string
-               (getenv stripped-match :env environment)) "")))))
+               (getenv stripped-match :env environment))
+             "")))))
 
 (defun expand-$-match (match)
   "expand-$-match match => string
