@@ -57,5 +57,7 @@ Return interned symbol for arbitrarily typed name; useful for use as hash keys."
 
 Quotes, transforms and interns unquoted variable names."
   `(quote
-    ,(if (symbolp name) name
-       (internify (eval name)))))
+    ,(internify
+      (if (symbolp name)
+          (symbol-name name)
+        (eval name)))))
