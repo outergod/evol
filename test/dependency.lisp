@@ -18,7 +18,10 @@
 
 (shadowing-import
  '(dependency-nodes-hashtable dependency-node root-nodes leaf-nodes find-node
-                              resolve-dag resolve-queue)
+                              resolve-dag resolve-queue resolve-all
+                              circular-dependency unresolvable-dependency
+                              unresolvable-node unresolvable-dependency
+                              circular-node circular-inter-nodes resolve-roots)
  (find-package :evol-test))
 
 (in-package :evol-test)
@@ -133,3 +136,45 @@
                  (resolve-queue
                   (car (member "root" nodes :key #'car :test #'equal))
                   nodes))))))
+
+(defixture dep-environment-fixture-unresolvable-1
+  (:setup (setq env (make-hash-table))
+          (setf (gethash 'root env) (list "root" "lvl1")
+                (gethash 'lvl1 env) (list "lvl1" "foo"))))
+
+(defixture dep-environment-fixture-circular-1
+  (:setup (setq env (make-hash-table))
+          (setf (gethash 'root env) (list "root" "lvl1")
+                (gethash 'lvl1 env) (list "lvl1" "lvl2")
+                (gethash 'lvl2 env) (list "lvl2" "lvl3")
+                (gethash 'lvl3 env) (list "lvl3" "lvl1"))))
+
+(deftest resolution-unresolvable (nodes)
+  (signals unresolvable-dependency
+    (resolve-all nodes #'resolve-queue))
+  (signals unresolvable-dependency
+    (resolve-all nodes #'resolve-dag)))
+
+(deftest resolution-circular (nodes)
+  (signals circular-dependency
+    (resolve-roots nodes #'resolve-queue))
+  (signals circular-dependency
+    (resolve-roots nodes #'resolve-dag)))
+
+(deftest resolution-unresolvable-1 ()
+  (with-fixture dep-environment-fixture-unresolvable-1
+    (let* ((nodes (dependency-nodes-hashtable #'identity #'car #'cdr env))
+           (condition (resolution-unresolvable nodes)))
+      (is (string= "lvl1"
+                   (unresolvable-node condition)))
+      (is (string= "foo"
+                   (unresolvable-dependency condition))))))
+
+(deftest resolution-circular-1 ()
+  (with-fixture dep-environment-fixture-circular-1
+    (let* ((nodes (dependency-nodes-hashtable #'identity #'car #'cdr env))
+           (condition (resolution-circular nodes)))
+      (is (string= "lvl1"
+                   (circular-node condition)))
+      (is (equal '("lvl2" "lvl3")
+                 (circular-inter-nodes condition))))))

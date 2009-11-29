@@ -16,6 +16,20 @@
 
 (in-package :evol)
 
+;;; conditions
+(define-condition circular-dependency (error)
+  ((circular-node :initarg :circular-node
+                  :reader  circular-node)
+   (inter-nodes   :initarg :inter-nodes
+                  :reader  circular-inter-nodes)))
+
+(define-condition unresolvable-dependency (error)
+  ((node       :initarg :node
+               :reader  unresolvable-node)
+   (dependency :initarg :dependency
+               :reader  unresolvable-dependency)))
+
+
 (defun dependency-nodes-hashtable (predicate namefn dependencyfn env)
   "dependency-nodes-hashtable predicate namefn dependencyfn env => node-list
 
@@ -63,6 +77,23 @@ Leaf nodes are simply the ones with no dependencies at all."
 Find and return node designated by NAME in NODES."
   (find name nodes :key #'car :test #'equal))
 
+(defmacro resolve-cond (name nodes seen (&body prologue) &body epilogue)
+  "resolve-cond name nodes seen (&body prologue) &body epilogue => context
+
+Insert COND clauses between PROLOGUE clauses and EPILOGUE final clause that
+check for erroneous conditions between the NAME of a node, the list of all NODES
+and nodes SEEN during dependency resolution and signal errors accordingly if
+encountered."
+  `(cond
+    ,@prologue
+    ((null (find-node ,name ,nodes))
+     (error 'unresolvable-dependency :node (car ,seen)
+                                     :dependency ,name))
+    ((member ,name ,seen :test #'equal)
+     (error 'circular-dependency :circular-node ,name
+                                 :inter-nodes (cdr (member ,name (reverse ,seen) :test #'equal))))
+    (t ,@epilogue)))
+
 (defun resolve-queue (root nodes)
   "resolve-queue root nodes => queue
 
@@ -73,19 +104,15 @@ Queues are suitable for sequential building only."
   (labels ((acc (rec seen branch root)
                 (let ((name (car branch))
                       (rest (cdr branch)))
-                  (cond
-                   ((null name) rec)                 ; ^= end of a branch
-                   ((null (find-node name nodes))    ; speaks for itself
-                    (error (concatenate 'string "TODO unresolved " name)))
-                   ((member name seen :test #'equal) ; so does this
-                    (error "TODO circular"))
-                   (t (if root                       ; new branch
-                          (if (member name rec)      ; ^= we've already been here
-                              rec
-                            (nconc (acc rec (cons name seen) rest nil)
-                                   (list name)))
-                        (acc (acc rec seen (find-node name nodes) t)
-                             seen rest nil)))))))
+                  (resolve-cond name nodes seen
+                    (((null name) rec))            ; ^= end of a branch
+                    (if root                       ; new branch
+                        (if (member name rec)      ; ^= we've already been here
+                            rec
+                          (nconc (acc rec (cons name seen) rest nil)
+                                 (list name)))
+                      (acc (acc rec seen (find-node name nodes) t)
+                           seen rest nil))))))
     (acc (list) (list) root t)))
 
 (defun resolve-dag (root nodes)
@@ -99,18 +126,14 @@ Dags are suitable for parallel building."
     (labels ((acc (seen branch root)
                   (let ((name (car branch))
                         (rest (cdr branch)))
-                    (cond
-                     ((consp name) branch)             ; ^= we've already been here
-                     ((null name) nil)                 ; ^= end of a branch
-                     ((null (find-node name nodes))    ; speaks for itself
-                      (error (concatenate 'string "TODO unresolved " name)))
-                     ((member name seen :test #'equal) ; so does this
-                      (error "TODO circular"))
-                     (t (if root                       ; new branch
-                            (rplacd branch             ; we want eql nodes, i.e. undirected cycles
-                                    (acc (cons name seen) rest nil))
-                          (cons (acc seen (find-node name nodes) t)
-                                (acc seen rest nil))))))))
+                    (resolve-cond name nodes seen
+                     (((consp name) branch)             ; ^= we've already been here
+                      ((null name) nil))                ; ^= end of a branch
+                     (if root                       ; new branch
+                         (rplacd branch             ; we want eql nodes, i.e. undirected cycles
+                                 (acc (cons name seen) rest nil))
+                       (cons (acc seen (find-node name nodes) t)
+                             (acc seen rest nil)))))))
       (acc (list) root t))))
 
 (defun resolve-all (nodes resfn &optional (roots nodes))
