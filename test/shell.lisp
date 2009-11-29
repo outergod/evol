@@ -68,24 +68,24 @@
 (deftest expanding-%-matches ()
   (with-fixture shell-environment-fixture
     (is (string= "%"
-               (expand-%-match "%" "" #'default-sourcefn *environment*)))
+                 (expand-%-match "%" "" #'default-sourcefn *environment*)))
     (is (string= "Layer 8"
-               (expand-%-match "@" "Layer 8" #'default-sourcefn *environment*)))
+                 (expand-%-match "@" "Layer 8" #'default-sourcefn *environment*)))
     (is (string= "right"
-               (expand-%-match "<" "foo"
-                               #'(lambda (input1 input2)
-                                   (declare (ignore input2))
-                                   (if (string= "foo" input1) "right" "wrong"))
-                               *environment*)))
+                 (expand-%-match "<" "foo"
+                                 #'(lambda (input1 input2)
+                                     (declare (ignore input2))
+                                     (if (string= "foo" input1) "right" "wrong"))
+                                 *environment*)))
     (is (string= "right"
-               (expand-%-match "<--|WIN|" "foo"
-                               #'(lambda (input1 input2)
-                                   (declare (ignore input1))
-                                   (if (string= "--|WIN|" input2) "right" "wrong"))
-                               *environment*)))
+                 (expand-%-match "<--|WIN|" "foo"
+                                 #'(lambda (input1 input2)
+                                     (declare (ignore input1))
+                                     (if (string= "--|WIN|" input2) "right" "wrong"))
+                                 *environment*)))
     (is (string= "WIN AWESOME lol."
-               (expand-%-match "<" ""
-                               #'(lambda (input1 input2) (list "WIN" "AWESOME" "lol."))
+                 (expand-%-match "<" ""
+                                 #'(lambda (input1 input2) (list "WIN" "AWESOME" "lol."))
                                *environment*)))
     (is (string= "42 23"
-               (expand-%-match "test1" "" #'default-sourcefn *environment*)))))
+                 (expand-%-match "test1" "" #'default-sourcefn *environment*)))))
