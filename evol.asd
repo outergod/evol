@@ -27,7 +27,7 @@
                 :author "Alexander Kahl <e-user@fsfe.org>"
                 :license "GPLv3+"
                 :depends-on (:external-program :cl-fad :cl-ppcre :alexandria
-                             :getopt :bordeaux-threads :patron)
+                             :optparser :bordeaux-threads :patron)
                 :components
                 ((:module "src"
                           :components
@@ -38,5 +38,5 @@
                            (:file "dependency"  :depends-on ("package"))
                            (:file "shell"       :depends-on ("environment"))
                            (:file "evolvable"   :depends-on ("shell" "path"))
-                           (:file "breeder"     :depends-on ("dependency" "evolvable"))
-                           (:file "toplevel"    :depends-on ("breeder" "util"))))))
+                           (:file "breeder"     :depends-on ("util" "dependency" "evolvable"))
+                           (:file "toplevel"    :depends-on ("breeder"))))))

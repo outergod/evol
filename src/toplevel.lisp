@@ -18,13 +18,23 @@
 
 (defparameter *default-evolution* nil)
 
-(defmacro devolution (name &rest args &key type &allow-other-keys)
+(defparameter *options* '((help   :options ("h" "help")             :default nil
+                                  :argument nil    :description "Display this help and exit.")
+                          (silent :options ("s" "silent" "quiet")   :default nil
+                                  :argument nil    :description "Don't echo commands.")
+                          (file   :options ("f" "file" "evolution") :default "Evolution"
+                                  :argument "FILE" :description "Use FILE as evolution.")
+                          (jobs   :options ("j" "jobs")             :default "1"
+                                  :argument "JOBS" :description "Breed JOBS evolvables simultaneously.")))
+
+(defmacro devolution (name (&body dependencies) &rest args &key type &allow-other-keys)
   "devolution name &rest args &key type &allow-other-keys => object
 
 Top-level syntactic sugar macro to create evolvables. Name will be the
-environmental hash key, :type must be a valid class name and all other keys will
-be proxied to (make-instance)."
-  `(make-instance ,type :name ,name ,@(remove-from-plist args :type)))
+environmental hash key, :TYPE must be a valid class name and all other keys will
+be proxied to MAKE-INSTANCE."
+  `(make-instance ,type :name ,name ,@(remove-from-plist args :type)
+                        :deps '(,@dependencies)))
 
 (defmacro default (name)
   "default name => mixed
@@ -36,16 +46,8 @@ Top-level syntactic sugar macro to set the default evolvable to name."
   "posix-argv => list
 
 Return command line argument list. Implementation dependent."
-  #+sbcl sb-ext::*posix-argv*
+  #+sbcl sb-ext:*posix-argv*
   #-sbcl nil)
-
-(defun parse-commandline (argv)
-  "parse-commandline argv => (args opts errors)
-
-Parse command line argument list argv with getopt and defined available
-options."
-  (getopt:getopt argv
-                 '(("verbose" :none nil))))
 
 (defun targets (args)
   "targets args => list
@@ -57,29 +59,82 @@ List of what to evolve based on list of command line args, default evolution and
        (or *default-evolution*
            (car (hash-table-keys *environment*))))))
 
-(defun print-help ()
-  "print-help => void
+(defmacro getf-option (option keyword)
+  "getf-option option keyword => result
 
-Print help. Stubbed for now."
-  (format t "This could be helpful one day. Now it isn't. :)~%"))
+GETF for options."
+  `(getf (cdr ,option) ,keyword))
+
+(defun format-option (stream string &optional (argument nil))
+  "format-option stream string argument => result
+
+Print option STRING with optional ARGUMENT to STREAM; formatting depends on
+whether STRING is a short or a long option, determined by its length."
+  (if (> (length string) 1)
+      (format stream "--~a~@[=~a~]" string argument)
+    (format stream "-~a~@[ ~a~]" string argument)))
+
+(defun optparser-options ()
+  "optparser-options => list
+
+Transform *OPTIONS* so that they are suitable for use with
+OPTPARSER:PARSE-ARGV."
+  (mapcan #'(lambda (option)
+              (mapcar #'(lambda (name)
+                          (list name :value (getf-option option :default) :idx (car option)))
+                      (getf-option option :options)))
+          *options*))
+
+(defun parse-commandline (argv)
+  "parse-commandline argv => (args opts)
+
+Parse command line argument list ARGV with OPTPARSER and defined available
+*OPTIONS*."
+  (optparser:parse-argv argv (optparser-options)))
+
+(defun print-help ()
+  "print-help => nil
+
+Print help."
+  (format t (concatenate 'string
+                         "Usage: evol [options] [target] ...~%"
+                         "Options:~%"
+                         "~{~a~%~}")
+          (mapcar #'(lambda (option)
+                      (let ((option-list
+                             (funcall #'format nil "  ~30@<~{~a~^, ~}~>"
+                             (mapcar #'(lambda (name)
+                                         (format-option nil name (getf-option option :argument)))
+                                     (getf-option option :options))))
+                            (description (getf-option option :description)))
+                        (if (<= (length option-list) 32)
+                            (concatenate 'string option-list description)
+                          (format nil "~a~%  ~0,1,30:<~a~>" option-list description))))
+                  *options*)))
 
 (defun repl ()
-  "repl => void
+  "repl => nil
 
 For now, this is just a stub for testing standalone execution with core files."
   (in-package :evol)
-  (load (cl-fad:pathname-as-file "Evolution"))
-  (multiple-value-bind (args opts errors) (parse-commandline (posix-argv))
-    (declare (ignore opts))
+  (multiple-value-bind (args opts) (parse-commandline (posix-argv))
     (sb-ext:quit
-     :unix-status (if errors
-                      (progn (print-help) 1)
-                    (reduce #'logior
-                       (mapcar #'(lambda (name)
-                                   (let ((code (breed (make-instance 'breeder)
-                                                      (getenv name :expanded nil))))
-                                     (cond
-                                      ((integerp code) code)
-                                      ((null code) 1)
-                                      (t 0))))
-                               (targets args)))))))
+     :unix-status (handler-case
+                   (progn
+                     (if (cdr (assoc 'help opts))
+                         (print-help)
+                       (let* ((jobs (parse-integer (cdr (assoc 'jobs opts))))
+                              (breeder
+                               (if (> 1 jobs)
+                                   (make-instance 'swarm :worker-capacity jobs
+                                                         :job-capacity 0
+                                                         :worker-timeout-duration 600)
+                                 (make-instance 'breeder))))
+                         (load (cl-fad:pathname-as-file (cdr (assoc 'file opts))))
+                         (mapc #'(lambda (name)
+                                   (breed breeder (getenv name :expanded nil)))
+                               (targets args))))
+                     0)
+                   (error (condition)
+                          (format *error-output* "evol: ~a Stop.~%" condition)
+                          1)))))
