@@ -18,17 +18,27 @@
 
 (defparameter *environment* (make-hash-table))
 
-(eval-when (:load-toplevel)
-  (defun getenv (var &key (env *environment*) (expanded t))
-    "getenv var &key env expanded => mixed
+(defgeneric expand (standard-object)
+  (:documentation "expand standard-object => string
+
+Return a suitable form of the object for %-style rule expansion.
+Defined here to prevent circular dependencies.")
+  (:method ((object standard-object))
+    "expand object => object
+
+Just return IDENTITY of the OBJECT."
+    object))
+
+(defun getenv (var &key (env *environment*) (expanded t))
+  "getenv var &key env expanded => mixed
 
 Return object stored for key var from hash :env and :expand the object for
 external command use if desired."
-    (let ((result (gethash (internify var) env "")))
-      (if (and expanded
-               (typep result 'evolvable))
-          (expand result)
-        result))))
+  (let ((result (gethash (internify var) env "")))
+    (if (and expanded
+             (typep result 'standard-object))
+        (expand result)
+      result)))
 
 (defmacro defenv (var val &optional (environment '*environment*))
   "defenv var val &optional environment => val

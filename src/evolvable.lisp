@@ -93,15 +93,11 @@ Also register evolvable in the evol *environment*"
 Printing evolvable-derived objects must simply return their names."
   (princ (name evol) stream))
 
-(defgeneric expand (evolvable)
-  (:documentation "expand evolvable => string
-
-Return a suitable form of the evolvable for %-style rule expansion.")
-  (:method ((evol evolvable))
-    "expand evol => string
+(defmethod expand ((evol evolvable))
+  "expand evol => string
 
 Expand EVOL to its name."
-    (name evol)))
+  (name evol))
 
 (defgeneric evolve (evolvable &rest args &key &allow-other-keys)
   (:documentation "Evolve this, whatever that may be")
