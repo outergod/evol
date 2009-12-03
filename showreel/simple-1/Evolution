@@ -16,15 +16,17 @@
 ;;;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (defenv cc "cc")
-
 (default "main")
-(devolution "main"    :type 'program :rule "%cc %< -o %@" :deps '("objects")
-                      :sourcefn #'(lambda (target modifier)
-                                    (declare (ignore target modifier))
-                                    (getenv "objects")))
-(devolution "objects" :type 'hive :of 'generic :spawn '("main.o" "program.o")
-                      :sourcefn #'(lambda (target modifier)
-                                    (declare (ignore modifier))
-                                    (pathname-change-suffix "c" target))
-                      :rule "%cc ${CFLAGS} -c -o %@ %<")
-(devolution "clean"   :type 'generic :rule "rm -f %objects %main")
+
+(devolution "main" ("objects") :type 'program :rule "%cc %< -o %@"
+            :sourcefn #'(lambda (target modifier)
+                          (declare (ignore target modifier))
+                          (getenv "objects")))
+
+(devolution "objects" () :type 'hive :of 'generic :spawn '("main.o" "program.o")
+            :rule "%cc ${CFLAGS} -c -o %@ %<"
+            :sourcefn #'(lambda (target modifier)
+                          (declare (ignore modifier))
+                          (pathname-change-suffix "c" target)))
+
+(devolution "clean" () :type 'generic :rule "rm -f %objects %main")
