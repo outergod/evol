@@ -17,13 +17,14 @@ Foundation:
 - A Bourne-compatible shell, e.g. GNU Bash
 
 CL libraries (all asdf-install:able):
-- Alexandria       | http://www.cliki.net/Alexandria
+- Alexandria       | http://common-lisp.net/project/alexandria/
 - external-program | http://www.cliki.net/external-program
 - CL-FAD           | http://www.cliki.net/CL-FAD
 - CL-PPCRE         | http://www.cliki.net/CL-PPCRE
 - optparser        | http://www.cliki.net/optparser
 - Bordeaux-Threads | http://www.cliki.net/Bordeaux-Threads
 - patron           | http://www.cliki.net/patron
+- Stefil           | http://common-lisp.net/project/stefil/
 
 Your distribution might provide some of these libraries but the names may
 differ, i.e. try to search for the libraries' names prefixed with `cl-` if not
