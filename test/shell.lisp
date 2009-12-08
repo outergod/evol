@@ -17,7 +17,7 @@
 (in-package :evol)
 
 (shadowing-import
- '(flatten deflate-string expand-%-match trim-{})
+ '(flatten deflate-string expand-%-match trim-{} interpolate-commandline)
  (find-package :evol-test))
 
 (in-package :evol-test)
@@ -63,7 +63,10 @@
 
 (defixture shell-environment-fixture
   (:setup (setq *environment* (make-hash-table))
-          (defenv test1 "42 23" *environment*)))
+          (defenv test1 "42 23")
+          (defenv cc "gcc")
+          (defenv file1 "foo.c")
+          (defenv file2 "bar.c")))
 
 (deftest expanding-%-matches ()
   (with-fixture shell-environment-fixture
@@ -89,3 +92,8 @@
                                *environment*)))
     (is (string= "42 23"
                  (expand-%-match "test1" "" #'default-sourcefn *environment*)))))
+
+(deftest test-complex-commandlines ()
+  (with-fixture shell-environment-fixture
+    (is (equal '("gcc" "foo.c" "bar.c")
+               (interpolate-commandline "%cc %file1 %file2")))))
