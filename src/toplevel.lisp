@@ -18,7 +18,7 @@
 
 (defparameter *default-evolution* nil)
 
-(defparameter *options* '((help   :options ("h" "help")             :default nil
+(defparameter *options* '((help   :options ("h")                    :default nil
                                   :argument nil    :description "Display this help and exit.")
                           (silent :options ("s" "silent" "quiet")   :default nil
                                   :argument nil    :description "Don't echo commands.")
