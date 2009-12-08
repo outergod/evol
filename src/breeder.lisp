@@ -28,9 +28,10 @@ Evaluate BODY in scope of VAR bound to dependency node list."
   "eval-reverse-cons (&body body1) (&body body2) => cons
 
 Evaluate BODY2 and BODY1 in this order and return result cons [BODY1|BODY2]."
-  `(let ((result (,@body2)))
-     (cons (,@body1)
-           result)))
+  (let ((result (gensym)))
+    `(let ((,result (,@body2)))
+       (cons (,@body1)
+             ,result))))
 
 (defmacro with-new-lock-held (var &body body)
   "with-new-lock-held var &body body => context
