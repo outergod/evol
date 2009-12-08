@@ -80,6 +80,11 @@ EVOL itself. No multithreading, minimal overhead, nil deadlocks."
                 :initform *standard-output*
                 :type     stream
                 :documentation "Stream to use for printing")
+   (error-stream :reader   swarm-error-stream
+                 :initarg  :error-stream
+                 :initform *error-output*
+                 :type     stream
+                :documentation "Stream to use for printing errors")
    (stream-lock :reader        stream-lock
                 :initform      (bt:make-lock "swarm-stream-lock")
                 :documentation "Mutex to use for printing"))
