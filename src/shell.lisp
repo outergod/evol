@@ -27,7 +27,7 @@ Run command line list cmd (blocking), returning exit status of invocation."
          (external-program:run (car cmd) (cdr cmd)
                                :output *standard-output* :error t))))
 
-(defun interpolate-commandline (cmd &key target sourcefn environment)
+(defun interpolate-commandline (cmd &key (target "") (sourcefn #'default-sourcefn) (environment *environment*))
   "interpolate-commandline cmd &key target sourcefn environment => list
 
 Interpolate split arguments of command line string cmd after grouping through
