@@ -16,16 +16,55 @@
 
 (in-package :evol)
 
-(defun run-command (cmd &key (verbose t) (formatfn #'format))
-  "run-command cmd &key verbose formatfn => integer
+;;; conditions
+(define-condition command-failure (error)
+  ((command :initarg :command
+            :reader  command-failure-command
+            :type list
+            :documentation "The command that failed.")
+   (code    :initarg :code
+            :reader  command-failure-code
+            :type fixnum
+            :documentation "Status code of failed invocation.")
+   (stdout  :initarg :stdout
+            :reader  command-failure-stdout
+            :type simple-string
+            :documentation "Output of invocation.")
+   (stderr  :initarg :stderr
+            :reader  command-failure-stderr
+            :type simple-string
+            :documentation "Error output of invocation."))
+  (:documentation "Condition signalled if invocation of an external command
+failed."))
 
-Run command line list cmd (blocking), returning exit status of invocation."
-  (when verbose
-    (let ((*print-pretty* nil))
-      (funcall formatfn t "~a~%" cmd)))
-  (cadr (multiple-value-list 
-         (external-program:run (car cmd) (cdr cmd)
-                               :output *standard-output* :error t))))
+(defmethod print-object ((condition command-failure) stream)
+  (format stream "~a: exit ~s"
+            (command-failure-command condition)
+            (command-failure-code condition)))
+
+
+(defun run-command (cmd &key (verbose t) (fatal nil))
+  "run-command cmd &key verbose fatal => (integer string string)
+
+Run command line list CMD (blocking), returning VALUES of exit status of
+invocation and strings of stdout and stderr output. If FATAL is non-nil and exit
+status is not 0, signal COMMAND-FAILURE instead.
+Side-effect: Print CMD prior to invocation and command output if VERBOSE is
+non-nil."
+  (labels ((conditional-format (destination control-string &rest format-arguments)
+             (when verbose
+               (let ((*print-pretty* nil))
+                 (apply #'format destination control-string format-arguments)))))
+    (conditional-format t "~a~%" cmd)
+    (multiple-value-bind (code stdout stderr)
+        (with-outputs-to-strings (stdout stderr)
+          (cadr (multiple-value-list 
+                 (external-program:run (car cmd) (cdr cmd) :output stdout :error stderr))))
+      (conditional-format *error-output* "~a" stderr)
+      (conditional-format t "~a" stdout)
+      (if (and (/= 0 code) fatal)
+          (error 'command-failure :command cmd :code code :stdout stdout :stderr stderr)
+        (values code stdout stderr)))))
 
 (defun interpolate-commandline (cmd &key (target "") (sourcefn #'default-sourcefn) (environment *environment*))
   "interpolate-commandline cmd &key target sourcefn environment => list
