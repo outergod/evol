@@ -93,8 +93,8 @@ Parse command line argument list ARGV with OPTPARSER and defined available
   (optparser:parse-argv argv (optparser-options)))
 
 (defun print-help ()
-  "print-help => nil
-
+  "print-help => string
+/
 Print help."
   (format t (concatenate 'string
                          "Usage: evol [options] [target] ...~%"
@@ -113,9 +113,11 @@ Print help."
                   *options*)))
 
 (defun repl ()
-  "repl => nil
+  "repl => quit
 
-For now, this is just a stub for testing standalone execution with core files."
+Top-level function used for the standalone executable created through
+bootstrapping evol.
+Warning: Quits CL after execution."
   (in-package :evol)
   (multiple-value-bind (args opts) (parse-commandline (posix-argv))
     (sb-ext:quit
@@ -135,6 +137,12 @@ For now, this is just a stub for testing standalone execution with core files."
                                    (breed breeder (getenv name :expanded nil)))
                                (targets args))))
                      0)
+                   (error (command-failure)
+                          (format *error-output* "evol: ~a~&evol: exit ~s  ~a~%"
+                                  (command-failure-stderr command-failure)
+                                  (command-failure-code command-failure)
+                                  (command-failure-command command-failure))
+                          (command-failure-code command-failure))
                    (error (condition)
-                          (format *error-output* "evol: ~a Stop.~%" condition)
-                          1)))))
+                          (format *error-output* "evol: ~a~&" condition)
+                          2)))))
