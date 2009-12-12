@@ -20,7 +20,7 @@
 (defun cl-forms (list target environment)
   "cl-forms list target environment => list
 
-Return new list with each element of input list interpolated and prepended with
+Return new list with each element of input LIST interpolated and prepended with
 an additional \"--eval\" element string."
   (let ((forms (list)))
     (dolist (form list forms)
@@ -33,28 +33,7 @@ an additional \"--eval\" element string."
                                 target #'default-sourcefn environment)))))))
 
 
-(defun cl-load-ops (list)
-  "cl-load-ops list => list
-
-Prepares a list of asdf:load-op forms for op in input list."
-  (mapcar #'(lambda (elt)
-              `(asdf:oos 'asdf:load-op ,elt))
-          list))
-
-
-(defmacro with-slot-enhanced-environment ((slots object) &body body)
-  "with-slot-enhanced-environment (slots object) body => context
-
-Create lexical context overriding *environment* with a fresh copy enhanced by
-all slot names/values as key/values from symbol list slots in object."
-  `(let ((*environment* (alexandria:copy-hash-table *environment*)))
-    (mapc #'(lambda (slot)
-              (setf (gethash slot *environment*)
-                    (write-to-string (slot-value ,object slot))))
-          ,slots)
-   ,@body))
-
-
+;;; classes
 ;;; evolvable, base target class
 (defclass evolvable ()
   ((name :reader   name
@@ -233,8 +212,7 @@ creation."))
 
 (defmethod evolve :after ((exe executable) &rest args &key &allow-other-keys)
   (run-command
-   (interpolate-commandline "chmod +x %@" :target (name exe))
-   :formatfn (getf args 'formatfn #'format)))
+   (interpolate-commandline "chmod +x %@" :target (name exe))))
 
 
 ;;;; Generic
@@ -251,8 +229,7 @@ honoring common quoting rules in line with Bourne shell syntax."))
   (run-command
    (interpolate-commandline (rule trans)
                             :target (name trans) :sourcefn (sourcefn trans)
-                            :environment *environment*)
-   :formatfn (getf args 'formatfn #'format)))
+                            :environment *environment*)))
 
 
 ;;; generic class

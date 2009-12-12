@@ -37,3 +37,38 @@ threads created that way."
                                                          (cdr args)))
                                               :name (gensym)))
                  list more-lists)))
+
+(defmacro with-outputs-to-strings ((&rest vars) &body forms-decls)
+  "with-outputs-to-strings (&rest vars) &body forms-decls => (result string1 .. stringN)
+
+The multi-version of WITH-OUTPUT-TO-STRING preserving original return values.
+Evaluate FORMS-DECLS with each element in VARS bound to a fresh open stream.
+Return multiple VALUES of FORMS-DECLS evaluation result and one string per VARS
+in given argument order."
+  `(let (,@(mapcar #'(lambda (var)
+                       (list var '(make-string-output-stream :element-type 'character)))
+                   vars))
+     (apply #'values
+      (unwind-protect (progn ,@forms-decls)
+        (mapc #'close (list ,@vars)))
+      (mapcar #'get-output-stream-string (list ,@vars)))))
+
+(defun cl-load-ops (list)
+  "cl-load-ops list => list
+
+Prepares a list of ASDF:LOAD-op forms for op in input LIST."
+  (mapcar #'(lambda (elt)
+              `(asdf:oos 'asdf:load-op ,elt))
+          list))
+
+(defmacro with-slot-enhanced-environment ((slots object) &body body)
+  "with-slot-enhanced-environment (slots object) body => context
+
+Create lexical context overriding *ENVIRONMENT* with a fresh copy enhanced by
+all slot names/values as key/values from symbol list SLOTS in OBJECT."
+  `(let ((*environment* (alexandria:copy-hash-table *environment*)))
+    (mapc #'(lambda (slot)
+              (setf (gethash slot *environment*)
+                    (write-to-string (slot-value ,object slot))))
+          ,slots)
+   ,@body))
