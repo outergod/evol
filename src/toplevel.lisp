@@ -1,5 +1,5 @@
 ;;;; evol - toplevel.lisp
-;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
+;;;; Copyright (C) 2009, 2010  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -46,8 +46,12 @@ Top-level syntactic sugar macro to set the default evolvable to name."
   "posix-argv => list
 
 Return command line argument list. Implementation dependent."
-  #+sbcl sb-ext:*posix-argv*
-  #-sbcl nil)
+  #+:sbcl sb-ext:*posix-argv*
+  #+:ccl *command-line-argument-list*
+  #+:clisp ext:*args*
+  #+:lispworks system:*line-arguments-list*
+  #+:cmu extensions:*command-line-words*
+  #-(or sbcl ccl clisp lispworks cmu) nil)
 
 (defun targets (args)
   "targets args => list
@@ -65,6 +69,15 @@ List of what to evolve based on list of command line args, default evolution and
 GETF for options."
   `(getf (cdr ,option) ,keyword))
 
+(defun argument-option (argument)
+  "argument-option argument => option
+
+Find option owning ARGUMENT (command line option)."
+  (find argument *options* :key #'(lambda (option)
+                                    (getf-option option :options))
+                           :test #'(lambda (option options)
+                                     (find option options :test #'equal))))
+
 (defun format-option (stream string &optional (argument nil))
   "format-option stream string argument => result
 
@@ -74,27 +87,41 @@ whether STRING is a short or a long option, determined by its length."
       (format stream "--~a~@[=~a~]" string argument)
     (format stream "-~a~@[ ~a~]" string argument)))
 
-(defun optparser-options ()
-  "optparser-options => list
+(defun unix-options-options ()
+  "unix-options-options => (bool-options parameter-options)
 
 Transform *OPTIONS* so that they are suitable for use with
-OPTPARSER:PARSE-ARGV."
-  (mapcan #'(lambda (option)
-              (mapcar #'(lambda (name)
-                          (list name :value (getf-option option :default) :idx (car option)))
-                      (getf-option option :options)))
-          *options*))
+UNIX-OPTIONS:MAP-PARSED-OPTIONS."
+  (let ((options (copy-tree *options*)))
+    (labels ((collector (predicate)
+                        (mapcan #'(lambda (option)
+                                    (getf-option option :options))
+                                (remove-if predicate options))))
+      (values
+       (collector #'(lambda (option)
+                      (getf-option option :argument)))
+       (collector #'(lambda (option)
+                      (not (getf-option option :argument))))))))
 
 (defun parse-commandline (argv)
   "parse-commandline argv => (args opts)
 
-Parse command line argument list ARGV with OPTPARSER and defined available
-*OPTIONS*."
-  (optparser:parse-argv argv (optparser-options)))
+Parse command line argument list ARGV with UNIX-OPTIONS:MAP-PARSED-OPTIONS and
+defined available *OPTIONS*."
+  (let ((args (list))
+        (opts (list)))
+    (multiple-value-bind (bool-options parameter-options) (unix-options-options)
+      (unix-options:map-parsed-options (cdr argv) bool-options parameter-options
+                                      #'(lambda (option value)
+                                          (pushnew (cons (car (argument-option option)) value)
+                                                   opts :key #'car))
+                                      #'(lambda (arg)
+                                          (push arg args)))
+    (values args opts))))
 
 (defun print-help ()
   "print-help => string
-/
+
 Print help."
   (format t (concatenate 'string
                          "Usage: evol [options] [target] ...~%"
@@ -117,7 +144,7 @@ Print help."
 
 Top-level function used for the standalone executable created through
 bootstrapping evol.
-Warning: Quits CL after execution."
+Heads-up: Quits CL after execution."
   (in-package :evol)
   (multiple-value-bind (args opts) (parse-commandline (posix-argv))
     (sb-ext:quit

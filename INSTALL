@@ -1,7 +1,7 @@
 Installation Instructions
 *************************
 
-Copyright (C) 2009 Alexander Kahl
+Copyright (C) 2009, 2010 Alexander Kahl
 
 This file is free documentation;
  I give unlimited permission to copy, distribute and modify it.
@@ -21,7 +21,7 @@ CL libraries (all asdf-install:able):
 - external-program | http://www.cliki.net/external-program
 - CL-FAD           | http://www.cliki.net/CL-FAD
 - CL-PPCRE         | http://www.cliki.net/CL-PPCRE
-- optparser        | http://www.cliki.net/optparser
+- unix-options     | http://www.cliki.net/unix-options
 - Bordeaux-Threads | http://www.cliki.net/Bordeaux-Threads
 - patron           | http://www.cliki.net/patron
 - Stefil           | http://common-lisp.net/project/stefil/
