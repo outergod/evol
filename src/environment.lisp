@@ -29,12 +29,12 @@ Defined here to prevent circular dependencies.")
 Just return IDENTITY of the OBJECT."
     object))
 
-(defun getenv (var &key (env *environment*) (expanded t))
-  "getenv var &key env expanded => mixed
+(defun getenv (var &key (env *environment*) (expanded t) (default ""))
+  "getenv var &key env expanded default => mixed
 
 Return object stored for key var from hash :env and :expand the object for
 external command use if desired."
-  (let ((result (gethash (internify var) env "")))
+  (let ((result (gethash (internify var) env default)))
     (if (and expanded
              (typep result 'standard-object))
         (expand result)
