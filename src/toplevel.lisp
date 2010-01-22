@@ -110,14 +110,22 @@ Parse command line argument list ARGV with UNIX-OPTIONS:MAP-PARSED-OPTIONS and
 defined available *OPTIONS*."
   (let ((args (list))
         (opts (list)))
-    (multiple-value-bind (bool-options parameter-options) (unix-options-options)
-      (unix-options:map-parsed-options (cdr argv) bool-options parameter-options
-                                      #'(lambda (option value)
-                                          (pushnew (cons (car (argument-option option)) value)
-                                                   opts :key #'car))
-                                      #'(lambda (arg)
-                                          (push arg args)))
-    (values args opts))))
+    (labels ((pushnew-option (option value)
+               (pushnew (cons (car (argument-option option)) value)
+                        opts :key #'car)))
+      (multiple-value-bind (bool-options parameter-options) (unix-options-options)
+        (unix-options:map-parsed-options (cdr argv) bool-options parameter-options
+                                         #'(lambda (option value)
+                                             (pushnew-option option value))
+                                         #'(lambda (arg)
+                                             (push arg args)))
+        (mapc #'(lambda (option)
+                  (when (and (getf-option option :default)
+                             (not (find (car option) opts :key #'car :test #'equal)))
+                    (push (cons (car option) (getf-option option :default))
+                          opts)))
+              *options*)
+        (values args opts)))))
 
 (defun print-help ()
   "print-help => string
