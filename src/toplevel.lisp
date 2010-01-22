@@ -16,6 +16,18 @@
 
 (in-package :evol)
 
+;;; conditions
+(define-condition illegal-evolvable (error)
+  ((target :initarg :evolvable
+           :reader  illegal-evolvable)))
+
+(define-condition unemployment (error) ())
+
+(define-condition unloadable-evolution (error)
+  ((pathname :initarg :path
+             :reader unloadable-evolution-pathname)))
+
+
 (defparameter *default-evolution* nil)
 
 (defparameter *options* '((help   :options ("h")                    :default nil
@@ -46,22 +58,28 @@ Top-level syntactic sugar macro to set the default evolvable to name."
   "posix-argv => list
 
 Return command line argument list. Implementation dependent."
-  #+:sbcl sb-ext:*posix-argv*
-  #+:ccl *command-line-argument-list*
-  #+:clisp ext:*args*
-  #+:lispworks system:*line-arguments-list*
-  #+:cmu extensions:*command-line-words*
+  #+sbcl sb-ext:*posix-argv*
+  #+ccl *command-line-argument-list*
+  #+clisp ext:*args*
+  #+lispworks system:*line-arguments-list*
+  #+cmu extensions:*command-line-words*
   #-(or sbcl ccl clisp lispworks cmu) nil)
 
-(defun targets (args)
-  "targets args => list
+(defun evolution-arguments (args)
+  "evolution-arguments args => list
 
 List of what to evolve based on list of command line args, default evolution and
 - as a last resort - the first defined evolvable."
-  (or (cdr args)
-      (list
-       (or *default-evolution*
-           (car (hash-table-keys *environment*))))))
+  (let ((evolvables (or (cdr args)
+                     (list
+                      (or *default-evolution*
+                          (car (hash-table-keys *environment*)))))))
+    (if (null (car evolvables))
+        (error 'unemployment)
+      (mapcar #'(lambda (evolvable)
+                  (or (getenv evolvable :expanded nil :default nil)
+                      (error 'illegal-evolvable :evolvable evolvable)))
+              evolvables))))
 
 (defmacro getf-option (option keyword)
   "getf-option option keyword => result
@@ -114,7 +132,7 @@ defined available *OPTIONS*."
                (pushnew (cons (car (argument-option option)) value)
                         opts :key #'car)))
       (multiple-value-bind (bool-options parameter-options) (unix-options-options)
-        (unix-options:map-parsed-options (cdr argv) bool-options parameter-options
+        (unix-options:map-parsed-options argv bool-options parameter-options
                                          #'(lambda (option value)
                                              (pushnew-option option value))
                                          #'(lambda (arg)
@@ -125,7 +143,7 @@ defined available *OPTIONS*."
                     (push (cons (car option) (getf-option option :default))
                           opts)))
               *options*)
-        (values args opts)))))
+        (values (nreverse args) opts)))))
 
 (defun print-help ()
   "print-help => string
@@ -147,6 +165,25 @@ Print help."
                           (format nil "~a~%  ~0,1,30:<~a~>" option-list description))))
                   *options*)))
 
+(defun jobs-breeder (jobs)
+  "jobs-breeder jobs => breeder
+
+Create the appropriate BREEDER for the number of JOBS."
+  (if (> 1 jobs)
+      (make-instance 'swarm :worker-capacity jobs
+                     :job-capacity 0
+                     :worker-timeout-duration 600)
+    (make-instance 'breeder)))
+
+(defun load-evolution (options)
+  "load-evolution options => void
+
+Load the evolution file based on command line OPTIONS."
+  (let ((path (cdr (assoc 'file options))))
+    (if (cl-fad:file-exists-p path)
+        (load (cl-fad:pathname-as-file path))
+      (error 'unloadable-evolution :path path))))
+
 (defun repl ()
   "repl => quit
 
@@ -161,17 +198,21 @@ Heads-up: Quits CL after execution."
                      (if (cdr (assoc 'help opts))
                          (print-help)
                        (let* ((jobs (parse-integer (cdr (assoc 'jobs opts))))
-                              (breeder
-                               (if (> 1 jobs)
-                                   (make-instance 'swarm :worker-capacity jobs
-                                                         :job-capacity 0
-                                                         :worker-timeout-duration 600)
-                                 (make-instance 'breeder))))
-                         (load (cl-fad:pathname-as-file (cdr (assoc 'file opts))))
+                              (breeder (jobs-breeder jobs)))
+                         (load-evolution opts)
                          (mapc #'(lambda (name)
                                    (breed breeder (getenv name :expanded nil)))
-                               (targets args))))
+                               (evolution-arguments args))))
                      0)
+                   (illegal-evolvable (condition)
+                     (format *error-output* "evol: Unknown evolvable ~s.  Stop.~%" (illegal-evolvable condition))
+                     2)
+                   (unemployment ()
+                     (format *error-output* "evol: Nothing to do, no evolvable definitions found.  Stop.~%")
+                     2)
+                   (unloadable-evolution (condition)
+                     (format *error-output* "evol: Cannot load evolution definition file ~s.  Stop.~%" (unloadable-evolution-pathname condition))
+                     2)
                    (command-failure (condition)
                      (format *error-output* "evol: ~a~&evol: exit ~s  ~a~%"
                              (command-failure-stderr condition)
@@ -179,5 +220,5 @@ Heads-up: Quits CL after execution."
                              (command-failure-command condition))
                      (command-failure-code condition))
                    (error (condition)
-                     (format *error-output* "evol: ~a~&" condition)
+                     (format *error-output* "evol: Internal error~%evol: ~a~&" condition)
                      2)))))
