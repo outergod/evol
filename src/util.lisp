@@ -20,8 +20,24 @@
   "posix-argv => list
 
 Return command line argument list. Implementation dependent."
-  #+sbcl sb-ext::*posix-argv*
-  #-sbcl nil)
+  #+sbcl sb-ext:*posix-argv*
+  #+ccl *command-line-argument-list*
+  #+clisp ext:*args*
+  #-(or sbcl ccl clisp) nil)
+
+(defun posix-quit (&optional code)
+  "posix-quit => bye bye
+
+Quit the current running CL instance returning error CODE."
+  #+ccl (ccl:quit code)
+  #+clisp (#+lisp=cl ext:quit #-lisp=cl lisp:quit code)
+  #+gcl (lisp:bye code)
+  #+sbcl (sb-ext:quit :unix-status (typecase code
+                                     ((signed-byte 32) code)
+                                     (null 0)
+                                     (t 1)))
+  #-(or ccl clisp gcl sbcl)
+    (error 'not-implemented :proc (list 'quit code)))
 
 (defun mapthread (function list &rest more-lists)
   "mapthread function list &rest more-lists => list

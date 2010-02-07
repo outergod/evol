@@ -54,17 +54,6 @@ be proxied to MAKE-INSTANCE."
 Top-level syntactic sugar macro to set the default evolvable to name."
   `(setq *default-evolution* ,name))
 
-(defun posix-argv ()
-  "posix-argv => list
-
-Return command line argument list. Implementation dependent."
-  #+sbcl sb-ext:*posix-argv*
-  #+ccl *command-line-argument-list*
-  #+clisp ext:*args*
-  #+lispworks system:*line-arguments-list*
-  #+cmu extensions:*command-line-words*
-  #-(or sbcl ccl clisp lispworks cmu) nil)
-
 (defun evolution-arguments (args)
   "evolution-arguments args => list
 
@@ -192,33 +181,32 @@ bootstrapping evol.
 Heads-up: Quits CL after execution."
   (in-package :evol)
   (multiple-value-bind (args opts) (parse-commandline (posix-argv))
-    (sb-ext:quit
-     :unix-status (handler-case
-                   (progn
-                     (if (cdr (assoc 'help opts))
-                         (print-help)
-                       (let* ((jobs (parse-integer (cdr (assoc 'jobs opts))))
-                              (breeder (jobs-breeder jobs)))
-                         (load-evolution opts)
-                         (mapc #'(lambda (name)
-                                   (breed breeder (getenv name :expanded nil)))
-                               (evolution-arguments args))))
-                     0)
-                   (illegal-evolvable (condition)
-                     (format *error-output* "evol: Unknown evolvable ~s.  Stop.~%" (illegal-evolvable condition))
-                     2)
-                   (unemployment ()
-                     (format *error-output* "evol: Nothing to do, no evolvable definitions found.  Stop.~%")
-                     2)
-                   (unloadable-evolution (condition)
-                     (format *error-output* "evol: Cannot load evolution definition file ~s.  Stop.~%" (unloadable-evolution-pathname condition))
-                     2)
-                   (command-failure (condition)
-                     (format *error-output* "evol: ~a~&evol: exit ~s  ~a~%"
-                             (command-failure-stderr condition)
-                             (command-failure-code condition)
-                             (command-failure-command condition))
-                     (command-failure-code condition))
-                   (error (condition)
-                     (format *error-output* "evol: Internal error~%evol: ~a~&" condition)
-                     2)))))
+    (posix-quit (handler-case
+                  (progn
+                    (if (cdr (assoc 'help opts))
+                        (print-help)
+                      (let* ((jobs (parse-integer (cdr (assoc 'jobs opts))))
+                             (breeder (jobs-breeder jobs)))
+                        (load-evolution opts)
+                        (mapc #'(lambda (name)
+                                  (breed breeder (getenv name :expanded nil)))
+                              (evolution-arguments args))))
+                    0)
+                  (illegal-evolvable (condition)
+                    (format *error-output* "evol: Unknown evolvable ~s.  Stop.~%" (illegal-evolvable condition))
+                    2)
+                  (unemployment ()
+                    (format *error-output* "evol: Nothing to do, no evolvable definitions found.  Stop.~%")
+                    2)
+                  (unloadable-evolution (condition)
+                    (format *error-output* "evol: Cannot load evolution definition file ~s.  Stop.~%" (unloadable-evolution-pathname condition))
+                    2)
+                  (command-failure (condition)
+                    (format *error-output* "evol: ~a~&evol: exit ~s  ~a~%"
+                            (command-failure-stderr condition)
+                            (command-failure-code condition)
+                            (command-failure-command condition))
+                    (command-failure-code condition))
+                  (error (condition)
+                    (format *error-output* "evol: Internal error~%evol: ~a~&" condition)
+                    2)))))
