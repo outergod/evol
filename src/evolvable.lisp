@@ -143,10 +143,10 @@ evolvables they auto-depend on so depending on a hive saves from declaring
 lots of mutual evolvables manually."))
 
 (defmethod initialize-instance :after ((hive hive) &rest initargs &key &allow-other-keys)
-  "initialize-instance :after hive &rest initargs &key &allow-other-keys => (void)
+  "initialize-instance :after hive &rest initargs &key &allow-other-keys => void
 
-Create an evolvable :of type for each :spawn with all key arguments proxied
-but :name, :of:, :spawn and have the hive itself auto-depend on them."
+Create an EVOLVABLE :OF type for each :SPAWN with all key arguments proxied
+but :NAME, :OF:, :SPAWN and have the HIVE itself auto-depend on them."
   (let ((of (getf initargs :of))
         (spawn (getf initargs :spawn))
         (spawnargs (remove-from-plist initargs :name :of :spawn)))
