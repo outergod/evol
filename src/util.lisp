@@ -69,22 +69,23 @@ in given argument order."
         (mapc #'close (list ,@vars)))
       (mapcar #'get-output-stream-string (list ,@vars)))))
 
-(defun cl-load-ops (list)
-  "cl-load-ops list => list
+(defun stringify (object)
+  "stringify object => string
 
-Prepares a list of ASDF:LOAD-op forms for op in input LIST."
-  (mapcar #'(lambda (elt)
-              `(asdf:oos 'asdf:load-op ,elt))
-          list))
+If OBJECT is a STRING, return it - else cast WRITE-TO-STRING."
+  (if (stringp object)
+      object
+    (write-to-string object)))
 
 (defmacro with-slot-enhanced-environment ((slots object) &body body)
   "with-slot-enhanced-environment (slots object) body => context
 
 Create lexical context overriding *ENVIRONMENT* with a fresh copy enhanced by
 all slot names/values as key/values from symbol list SLOTS in OBJECT."
-  `(let ((*environment* (alexandria:copy-hash-table *environment*)))
-    (mapc #'(lambda (slot)
-              (setf (gethash slot *environment*)
-                    (write-to-string (slot-value ,object slot))))
-          ,slots)
-   ,@body))
+  (let ((value (gensym)))
+    `(let ((*environment* (alexandria:copy-hash-table *environment*)))
+       (mapc #'(lambda (slot)
+                 (let ((,value (slot-value ,object slot)))
+                   (setf (gethash slot *environment*) (stringify ,value))))
+             ,slots)
+       ,@body)))
