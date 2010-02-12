@@ -34,6 +34,9 @@ test -f evol || { echo "building failed"; exit 1; }
 echo "Bootstrap Phase 2..."
 mv evol{,~}
 ./evol~
+
+test -f evol || { echo "building failed"; exit 1; }
+
 rm evol~
 
 ls -l evol

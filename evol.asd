@@ -40,5 +40,6 @@
                            (:file "heredoc"     :depends-on ("package" "ring-buffer"))
                            (:file "shell"       :depends-on ("package" "util" "environment"))
                            (:file "evolvable"   :depends-on ("package" "shell" "path"))
+                           (:file "common-lisp" :depends-on ("package" "util" "evolvable" "heredoc"))
                            (:file "breeder"     :depends-on ("package" "dependency" "evolvable"))
                            (:file "toplevel"    :depends-on ("package" "breeder"))))))

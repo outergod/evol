@@ -1,5 +1,5 @@
 ;;;; evol - evolvable.lisp
-;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
+;;;; Copyright (C) 2009, 2010  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -15,22 +15,6 @@
 ;;;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (in-package :evol)
-
-;;; helpers
-(defun cl-forms (list target environment)
-  "cl-forms list target environment => list
-
-Return new list with each element of input LIST interpolated and prepended with
-an additional \"--eval\" element string."
-  (let ((forms (list)))
-    (dolist (form list forms)
-      (setq forms
-            (nconc forms (list "--eval"
-                               (interpolate-argument
-                                (if (listp form)
-                                    (format nil "~s" form)
-                                  form)
-                                target #'default-sourcefn environment)))))))
 
 
 ;;; classes
@@ -240,97 +224,3 @@ honoring common quoting rules in line with Bourne shell syntax."))
 ;;; program class
 (defclass program (generic-transformator executable) ()
   (:documentation "TODO"))
-
-
-;;;; Common Lisp Evolvables
-;;; cl-transformator class
-(defclass cl-transformator (definite)
-  ((rule :accessor rule
-         :initarg :rule
-         :initform (alexandria:required-argument :rule)))
-  (:documentation "Evolution takes place here through running a freshly forked
-Common Lisp copy that expects rule to be a list of forms to execute in order.
-sourcefn is expected to return list of valid Common Lisp forms that will each be
-grouped as a single argument to be passed to (eval) so no special quoting aside
-from \\\" is required.
-Variable expansion is only performed against sourcefn's return forms."))
-
-(defmethod evolve ((trans cl-transformator) &rest args &key &allow-other-keys)
-  (run-command
-   (nconc (split-commandline "sbcl --noinform --disable-debugger")
-          (cl-forms
-           (funcall (sourcefn trans) (rule trans))
-           (name trans) *environment*))))
-
-
-;;; cl-core class
-(defclass cl-core (cl-transformator file)
-  ((sourcefn :initform #'(lambda (rule)
-                           `((require 'asdf)
-                             ,@(cl-load-ops rule)
-                             (in-package %package)
-                             (sb-ext:save-lisp-and-die "%@" :toplevel %toplevel
-                                                            :purify %purify)))
-             :allocation :class
-             :documentation "Preinitialized for this class; returns a list of
-forms to first load asdf, then in turn additional asdf packages from rule and
-finally a form to have sbcl create a core file.")
-   (init-package :accessor init-package
-                 :initarg :init-package
-                 :initform (alexandria:required-argument :init-package)
-                 :documentation "Package to change to. This is neccessary
-because package names cannot be quoted and furthermore without this, the
-toplevel function couldn't be defined proplery")
-   (toplevel :accessor toplevel
-             :initarg :toplevel
-             :initform nil
-             :documentation "Name of the function to initally load after core
-has been loaded itself; see
-http://www.sbcl.org/manual/Saving-a-Core-Image.html")
-   (purify   :accessor purify
-             :initarg :purify
-             :initform t
-             :documentation "see http://www.sbcl.org/manual/Saving-a-Core-Image.html")
-   (env-slots :initform (list 'init-package 'toplevel 'purify)))
-  (:documentation "This evolvable enables creation of non-standalone Common Lisp
-core files. Right now, only sbcl is supported.
-Feed rule with a list of asdf-recognized package symbols to load into the
-core."))
-
-
-;;; cl-exe class
-(defclass cl-exe (cl-transformator executable)
-  ((sourcefn :initform #'(lambda (rule)
-                           `((require 'asdf)
-                             ,@(cl-load-ops rule)
-                             (in-package %init-package)
-                             (sb-ext:save-lisp-and-die "%@" :executable t
-                                                            :toplevel %toplevel
-                                                            :purify %purify)))
-             :reader sourcefn
-             :allocation :class
-             :documentation "Preinitialized for this class; returns a list of
-forms to first load asdf, then in turn additional asdf packages from rule and
-finally a form to have sbcl create the executable.")
-   (init-package :accessor init-package
-                 :initarg :init-package
-                 :initform (alexandria:required-argument :init-package)
-                 :documentation "Package to change to. This is neccessary
-because package names cannot be quoted and furthermore without this, the
-toplevel function couldn't be defined proplery.")
-   (toplevel :accessor toplevel
-             :initarg :toplevel
-             :initform nil
-             :documentation "Name of the function to initally load after core
-has been loaded itself;
-see http://www.sbcl.org/manual/Saving-a-Core-Image.html")
-   (purify   :accessor purify
-             :initarg :purify
-             :initform t
-             :documentation "see http://www.sbcl.org/manual/Saving-a-Core-Image.html")
-   (env-slots :initform (list 'init-package 'toplevel 'purify)))
-  (:documentation "In line with cl-core, a complete dump is generated but with
-the engine fully runable contained within so the resulting file is a real
-executable.
-Feed rule with a list of asdf-recognized package symbols to load into the
-binary."))
