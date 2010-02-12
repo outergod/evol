@@ -69,7 +69,7 @@ non-nil."
 (defun interpolate-commandline (cmd &key (target "") (sourcefn #'default-sourcefn) (environment *environment*))
   "interpolate-commandline cmd &key target sourcefn environment => list
 
-Interpolate split arguments of command line string cmd after grouping through
+Interpolate split arguments of command line string CMD after grouping through
 Bourne shell syntax block quoting, see split-commandline for details.
 Unquoted quotes are stripped after interpolation, single quotes prevent
 interpolation of their contained argument while double quotes don't.
@@ -107,15 +107,15 @@ Expand all % and $ matches in string argument in turn."
 (defun interpolate-%-argument (argument target sourcefn environment)
   "interpolate-%-argument argument target sourcefn environment => string
 
-Expand all matches of % words in string argument honoring the special target and
-sourcefn matches and, for the rest, the environment."
+Expand all matches of % words in string ARGUMENT honoring the special TARGET and
+SOURCEFN matches and, for the rest, the ENVIRONMENT."
   (cl-ppcre:regex-replace-all "%({[^}%()\"]*}|[^ %()\"]*)" argument
                               (replace-with-region #'expand-%-match target sourcefn environment)))
 
 (defun interpolate-$-argument (argument)
   "interpolate-$-argument argument => string
 
-Expand all matches of $ words in string argument."
+Expand all matches of $ words in string ARGUMENT."
   (cl-ppcre:regex-replace-all "\\$({[^}\\$()\"]}|[^ \\$()\"]*)" argument
                               (replace-with-region #'expand-$-match)))
 
