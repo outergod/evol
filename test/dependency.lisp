@@ -18,10 +18,9 @@
 
 (shadowing-import
  '(dependency-nodes-hashtable dependency-node root-nodes leaf-nodes find-node
-                              resolve-dag resolve-queue resolve-all
-                              circular-dependency unresolvable-dependency
-                              unresolvable-node unresolvable-dependency
-                              circular-node circular-inter-nodes resolve-roots)
+   resolve-dag resolve-queue resolve-all circular-dependency
+   unresolvable-dependency unresolvable-node unresolvable-dependency
+   circular-node circular-inter-nodes resolve-roots)
  (find-package :evol-test))
 
 (in-package :evol-test)
