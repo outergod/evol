@@ -49,7 +49,7 @@ Store val for key var in hash environment."
 (defun posix-getenv (name)
   "posix-getenv name => string
 
-Return value for POSIX environmental key name, empty string if nothing found.
+Return value for POSIX environmental key name, empty string if nothing found."
   #+sbcl (or (sb-ext:posix-getenv name) "")
   #+ccl (or (ccl:getenv name) "")
   #-(or sbcl ccl) "")
