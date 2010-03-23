@@ -28,7 +28,7 @@
                 :license "GPLv3+"
                 :depends-on (:external-program :cl-fad :cl-ppcre :alexandria
                              :unix-options :bordeaux-threads :patron
-                             :dso-lexer :fucc-parser :fucc-generator)
+                             :dso-lex :fucc-parser :fucc-generator)
                 :components
                 ((:module "src"
                           :components
