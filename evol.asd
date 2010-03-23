@@ -1,5 +1,5 @@
 ;;;; evol - evol.asd
-;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
+;;;; Copyright (C) 2009, 2010  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@
                 :author "Alexander Kahl <e-user@fsfe.org>"
                 :license "GPLv3+"
                 :depends-on (:external-program :cl-fad :cl-ppcre :alexandria
-                             :unix-options :bordeaux-threads :patron)
+                             :unix-options :bordeaux-threads :patron
+                             :dso-lexer :fucc-parser :fucc-generator)
                 :components
                 ((:module "src"
                           :components
@@ -39,6 +40,10 @@
                            (:file "ring-buffer" :depends-on ("package"))
                            (:file "heredoc"     :depends-on ("package" "ring-buffer"))
                            (:file "shell"       :depends-on ("package" "util" "environment"))
+                           (:module "m4"
+                            :components
+                            ((:file "m4-parser"))
+                            :depends-on ("package"))
                            (:file "evolvable"   :depends-on ("package" "shell" "path"))
                            (:file "common-lisp" :depends-on ("package" "util" "evolvable" "heredoc"))
                            (:file "breeder"     :depends-on ("package" "dependency" "evolvable"))
