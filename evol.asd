@@ -28,7 +28,7 @@
                 :license "GPLv3+"
                 :depends-on (:external-program :cl-fad :cl-ppcre :alexandria
                              :unix-options :bordeaux-threads :patron
-                             :dso-lex :fucc-parser :fucc-generator)
+                             :dso-parse)
                 :components
                 ((:module "src"
                           :components
@@ -42,7 +42,8 @@
                            (:file "shell"       :depends-on ("package" "util" "environment"))
                            (:module "m4"
                             :components
-                            ((:file "m4-parser"))
+                            ((:file "m4-builtin")
+                             (:file "m4-parser" :depends-on ("m4-builtin")))
                             :depends-on ("package"))
                            (:file "evolvable"   :depends-on ("package" "shell" "path"))
                            (:file "common-lisp" :depends-on ("package" "util" "evolvable" "heredoc"))
