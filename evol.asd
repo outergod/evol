@@ -44,7 +44,7 @@
                             :components
                             ((:file "m4-builtin")
                              (:file "m4-parser" :depends-on ("m4-builtin")))
-                            :depends-on ("package"))
+                            :depends-on ("package" "shell"))
                            (:file "evolvable"   :depends-on ("package" "shell" "path"))
                            (:file "common-lisp" :depends-on ("package" "util" "evolvable" "heredoc"))
                            (:file "breeder"     :depends-on ("package" "dependency" "evolvable"))
