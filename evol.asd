@@ -27,7 +27,8 @@
                 :author "Alexander Kahl <e-user@fsfe.org>"
                 :license "GPLv3+"
                 :depends-on (:external-program :cl-fad :cl-ppcre :alexandria
-                             :unix-options :bordeaux-threads :patron)
+                             :unix-options :bordeaux-threads :patron
+                             :trivial-gray-streams)
                 :components
                 ((:module "src"
                           :components
@@ -42,7 +43,8 @@
                            (:module "m4"
                             :components
                             ((:file "m4-builtin")
-                             (:file "m4-parser" :depends-on ("m4-builtin")))
+                             (:file "m4-lexer" :depends-on ("m4-builtin"))
+                             (:file "m4-parser" :depends-on ("m4-builtin" "m4-lexer")))
                             :depends-on ("package" "shell"))
                            (:file "evolvable"   :depends-on ("package" "shell" "path"))
                            (:file "common-lisp" :depends-on ("package" "util" "evolvable" "heredoc"))
