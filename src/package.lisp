@@ -27,4 +27,6 @@
            :defenv
            :getenv
            :*environment*
-           :repl))
+           :repl
+           :process-m4
+           :read-heredoc))
