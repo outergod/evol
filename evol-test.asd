@@ -1,5 +1,5 @@
 ;;;; evol - evol-test.asd
-;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
+;;;; Copyright (C) 2009 2010  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -34,4 +34,9 @@
                            (:file "environment" :depends-on ("package"))
                            (:file "path"        :depends-on ("package"))
                            (:file "shell"       :depends-on ("package"))
-                           (:file "dependency"  :depends-on ("package"))))))
+                           (:file "dependency"  :depends-on ("package"))
+                           (:module "m4"
+                            :components
+                            ((:file "m4")
+                             (:file "m4-builtin" :depends-on ("m4"))
+                             (:file "m4-parser" :depends-on ("m4"))))))))
