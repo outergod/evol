@@ -40,4 +40,5 @@
                             ((:file "m4")
                              (:file "m4-builtin" :depends-on ("m4"))
                              (:file "m4-parser"  :depends-on ("m4"))
-                             (:file "m4-macros"  :depends-on ("m4"))))))))
+                             (:file "m4-macros"  :depends-on ("m4")))
+                            :depends-on ("package"))))))
