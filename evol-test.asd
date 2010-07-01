@@ -36,9 +36,9 @@
                            (:file "shell"       :depends-on ("package"))
                            (:file "dependency"  :depends-on ("package"))
                            (:module "m4"
+                            :depends-on ("package")
                             :components
                             ((:file "m4")
                              (:file "m4-builtin" :depends-on ("m4"))
                              (:file "m4-parser"  :depends-on ("m4"))
-                             (:file "m4-macros"  :depends-on ("m4")))
-                            :depends-on ("package"))))))
+                             (:file "m4-macros"  :depends-on ("m4"))))))))
