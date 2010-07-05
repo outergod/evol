@@ -21,6 +21,10 @@
 
 (in-package :evol-system)
 
+  ;;; CFFI-Grovel is needed for processing grovel-file components
+(cl:eval-when (:load-toplevel :execute)
+  (asdf:operate 'asdf:load-op 'cffi-grovel))
+
 (asdf:defsystem :evol
                 :description "evol - entrenched virtues of lisp / love reversed. Multi-purpose build system."
                 :version "0.0.1"
@@ -28,7 +32,7 @@
                 :license "GPLv3+"
                 :depends-on (:external-program :cl-fad :cl-ppcre :alexandria
                              :unix-options :bordeaux-threads :patron
-                             :trivial-gray-streams)
+                             :trivial-gray-streams :cffi)
                 :components
                 ((:module "src"
                           :components
@@ -40,6 +44,12 @@
                            (:file "ring-buffer" :depends-on ("package"))
                            (:file "heredoc"     :depends-on ("package" "ring-buffer"))
                            (:file "shell"       :depends-on ("package" "util" "environment"))
+                           (:module "cffi-regex"
+                            :components
+                            ((:file "import")
+                             (cffi-grovel:grovel-file "cffi-regex-grovel" :depends-on ("import"))
+                             (:file "cffi-regex" :depends-on ("import" "cffi-regex-grovel")))
+                            :depends-on ("package"))
                            (:module "m4"
                             :components
                             ((:file "m4-builtin")
