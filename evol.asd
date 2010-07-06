@@ -48,7 +48,8 @@
                             :components
                             ((:file "import")
                              (cffi-grovel:grovel-file "cffi-regex-grovel" :depends-on ("import"))
-                             (:file "cffi-regex" :depends-on ("import" "cffi-regex-grovel")))
+                             (:file "cffi-regex"  :depends-on ("import" "cffi-regex-grovel"))
+                             (:file "regex"       :depends-on ("cffi-regex")))
                             :depends-on ("package"))
                            (:module "m4"
                             :components
