@@ -19,15 +19,7 @@
 (define "__USE_GNU")
 (include "regex.h")
 
-;; typedefs
-;; (ctype :s-reg "s_reg_t")
-;; (ctype :active-reg "active_reg_t")
-;; (ctype :reg-syntax "reg_syntax_t")
-;; (ctype :size-t "size_t")
-;; (ctype :regoff-t "regoff_t")
-
 ;; option constants
-(constant (+syntax-emacs+ "RE_SYNTAX_EMACS"))
 (constant (+backslash-escape-in-lists+ "RE_BACKSLASH_ESCAPE_IN_LISTS"))
 (constant (+bk-plus-qm+ "RE_BK_PLUS_QM"))
 (constant (+char-classes+ "RE_CHAR_CLASSES"))
@@ -106,9 +98,9 @@
   ((:erparen "REG_ERPAREN")))
 
 ;; pattern buffer
-(constant (+unallocated+ "REGS_UNALLOCATED"))
-(constant (+reallocate+ "REGS_REALLOCATE"))
-(constant (+fixed+ "REGS_FIXED"))
+(constant (+regs-unallocated+ "REGS_UNALLOCATED"))
+(constant (+regs-reallocate+ "REGS_REALLOCATE"))
+(constant (+regs-fixed+ "REGS_FIXED"))
 
 (cstruct pattern-buffer "regex_t"
   (buffer "buffer" :type :string)

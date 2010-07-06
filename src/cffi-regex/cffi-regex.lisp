@@ -23,8 +23,8 @@
 
 (defcstruct registers
   (num-regs :unsigned-int)
-  (start :regoff-t)
-  (end :regoff-t))
+  (start :pointer)
+  (end :pointer))
 
 (defcfun ("re_set_syntax" set-syntax) :reg-syntax (syntax :reg-syntax))
 
@@ -33,11 +33,11 @@
 
 (defcfun ("re_compile_fastmap" compile-fastmap) :int (buffer pattern-buffer))
 
-(defcfun ("re_search" search-string) :int
+(defcfun ("re_search" %regex-search) :int
   (buffer pattern-buffer) (string :string) (length :int) (start :int)
   (range :int) (registers registers))
 
-(defcfun ("re_search_2" search-string-2) :int
+(defcfun ("re_search_2" %regex-search-2) :int
   (buffer pattern-buffer)
   (string1 :string) (length1 :int)
   (string2 :string) (length2 :int)
@@ -45,11 +45,11 @@
   (registers registers)
   (stop :int))
 
-(defcfun ("re_match" match) :int
+(defcfun ("re_match" %regex-match) :int
   (buffer pattern-buffer) (string :string) (length :int) (start :int)
   (registers registers))
 
-(defcfun ("re_match_2" match-2) :int
+(defcfun ("re_match_2" %regex-match-2) :int
   (buffer pattern-buffer)
   (string1 :string) (length1 :int)
   (string2 :string) (length2 :int)
@@ -57,6 +57,6 @@
   (registers registers)
   (stop :int))
 
-(defcfun ("re_set_registers" set-registers) :void
+(defcfun ("re_set_registers" %regex-set-registers) :void
   (buffer pattern-buffer) (registers registers)
   (num-regs :unsigned-int) (starts :regoff-t) (ends :regoff-t))
