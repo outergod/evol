@@ -59,4 +59,4 @@
 
 (defcfun ("re_set_registers" %regex-set-registers) :void
   (buffer pattern-buffer) (registers registers)
-  (num-regs :unsigned-int) (starts :regoff-t) (ends :regoff-t))
+  (num-regs :unsigned-int) (starts :regoff) (ends :regoff))

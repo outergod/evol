@@ -30,10 +30,10 @@
   (values
    (mem-aref
     (mem-aref (foreign-slot-pointer registers 'registers 'start) :pointer)
-    'regoff-t index)
+    :regoff index)
    (mem-aref
     (mem-aref (foreign-slot-pointer registers 'registers 'end) :pointer)
-    'regoff-t index)))
+    :regoff index)))
 
 (defun regex-search (regex target-string &key (start 0) (end (length target-string)))
   (with-pattern-buffer (buffer regex)

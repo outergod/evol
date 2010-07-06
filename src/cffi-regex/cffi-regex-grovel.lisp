@@ -16,8 +16,16 @@
 
 (in-package :cffi-regex)
 
-(define "__USE_GNU")
+(define "_GNU_SOURCE" 1)
 (include "regex.h")
+(include "string.h")
+
+;; c typdefs
+(ctype :size-t "size_t")
+(ctype :s-reg "s_reg_t")
+(ctype :active-reg "active_reg_t")
+(ctype :reg-syntax "reg_syntax_t")
+(ctype :regoff "regoff_t")
 
 ;; option constants
 (constant (+backslash-escape-in-lists+ "RE_BACKSLASH_ESCAPE_IN_LISTS"))
