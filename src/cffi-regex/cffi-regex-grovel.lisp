@@ -16,11 +16,21 @@
 
 (in-package :cffi-regex)
 
+;;; This is part of glibc regex.h expressed in cffi-grovel DSL and oughts to
+;;; ensure portability between platforms (hopefully).
+
+; regex.h requires __USE_GNU to be defined for the same feature set as GNU m4;
+; on some platforms features.h gets sucked in early resulting in a reset of
+; __USE_GNU to undef unless _GNU_SOURCE has been defined, hence features.h is
+; explicitly included to ensure __USE_GNU being set during regex.h processing.
 (define "_GNU_SOURCE" 1)
+(include "features.h")
 (include "regex.h")
 (include "string.h")
 
 ;; c typdefs
+; Please ignore warnings of these types already being defined in package KEYWORD
+; (sic), tested on SBCL.
 (ctype :size-t "size_t")
 (ctype :s-reg "s_reg_t")
 (ctype :active-reg "active_reg_t")

@@ -16,6 +16,10 @@
 
 (in-package :cffi-regex)
 
+;;; What follows is the manual part of the CL -> libc regex interface. Please
+;;; refer to the CFFI manual, glibc regex.h and the GNU regex info pages for an
+;;; in-depth explanation.
+
 (define-foreign-library libc
   (:unix "libc.so.6"))
 
