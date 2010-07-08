@@ -18,12 +18,12 @@
 
 (defpackage :cffi-regex
   (:use :cl :cffi)
-  (:export :regex-search :regex-match)
+  (:export :regex-search :regex-match :regex-compilation-failure :regex-internal-error)
   (:shadow :regoff-t :size-t :reg-syntax :active-reg :s-reg))
 
 (defpackage :evol
   (:nicknames :love)
-  (:use :cl :external-program :cl-fad :alexandria)
+  (:use :cl :external-program :cl-fad :alexandria :cffi-regex)
   (:shadow :copy-stream :copy-file)
   (:export :pathname-suffix-p
            :pathname-change-suffix
