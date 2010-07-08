@@ -99,9 +99,9 @@ all slot names/values as key/values from symbol list SLOTS in OBJECT."
 (defun replace-with-region (replacefn &rest args)
   "replace-with-region replacefn &rest args => closure
 
-Create closure that is suitable for use with cl-ppcre replacement forms. Created
-closure invokes replacefn against the matched subsequence in the string to be
-searched additionally passing args."
+Create closure that is suitable for use with CL-PPCRE replacement forms. Created
+closure invokes REPLACEFN against the matched subsequence in the string to be
+searched additionally passing ARGS."
   #'(lambda (target-string start end match-start match-end reg-starts reg-ends)
       (declare (ignore start end match-start match-end))
       (apply replacefn (subseq target-string
