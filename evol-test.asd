@@ -35,8 +35,12 @@
                            (:file "path"        :depends-on ("package"))
                            (:file "shell"       :depends-on ("package"))
                            (:file "dependency"  :depends-on ("package"))
-                           (:module "m4"
+                           (:module "cffi-regex"
                             :depends-on ("package")
+                            :components
+                            ((:file "regex")))
+                           (:module "m4"
+                            :depends-on ("package" "cffi-regex")
                             :components
                             ((:file "m4")
                              (:file "m4-builtin" :depends-on ("m4"))

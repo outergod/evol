@@ -17,7 +17,7 @@
 (in-package :evol-test-system)
 
 (defpackage :evol-test
-  (:use :cl :evol :stefil)
+  (:use :cl :evol :cffi-regex :stefil)
   (:export :all))
 
 (in-package :evol-test)
