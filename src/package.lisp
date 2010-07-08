@@ -17,7 +17,9 @@
 (in-package :evol-system)
 
 (defpackage :cffi-regex
-  (:use :cl :cffi))
+  (:use :cl :cffi)
+  (:export :regex-search :regex-match)
+  (:shadow :regoff-t :size-t :reg-syntax :active-reg :s-reg))
 
 (defpackage :evol
   (:nicknames :love)
