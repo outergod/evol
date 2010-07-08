@@ -37,3 +37,13 @@
 
 (deftest regex-gnu-m4-11.3-2 ()
   (assert-regex-search "\<Q\w*" "GNUs not Unix" :startpos nil))
+
+(deftest regex-gnu-m4-11.3-3 ()
+  (assert-regex-search "\\(b\\)" "abc" :startpos 1 :registers (list (list 1 2) (list 1 2))))
+
+(deftest regex-gnu-m4-11.3-4 ()
+  (assert-regex-search "b" "abc" :startpos 1 :registers (list (list 1 2))))
+
+(deftest regex-gnu-m4-11.3-5 ()
+  (assert-regex-search "\\(\\(d\\)?\\)\\(c\\)" "abc" :startpos 2 :registers (list (list 2 3) (list 2 2)
+                                                                                  (list -1 -1) (list 2 3))))
