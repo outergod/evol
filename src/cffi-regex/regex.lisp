@@ -82,6 +82,7 @@ In case of a libc internal error signal a REGEX-INTERNAL-ERROR condition."
                    (values startpos matches))))))))
 
 (defun regex-match (regex target-string &optional (start 0))
+  "regex-match regex target-string &optional (start 0) => incomplete"
   (with-pattern-buffer (buffer regex)
     (with-foreign-object (registers 'registers)
       (%regex-match buffer target-string (length target-string)
