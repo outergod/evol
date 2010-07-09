@@ -17,7 +17,8 @@
 (in-package :evol)
 
 (shadowing-import
- '(mapthread with-outputs-to-strings stringify with-slot-enhanced-environment)
+ '(mapthread with-outputs-to-strings stringify with-slot-enhanced-environment
+  expand-ascii-ranges)
  (find-package :evol-test))
 
 (in-package :evol-test)
@@ -58,3 +59,19 @@
                                                (make-instance 'slot-tester :slot1 "foo" :slot2 "bar"))
                (list (gethash 'slot1 *environment*)
                      (gethash 'slot2 *environment*)))))))
+
+(deftest test-expand-ascii-ranges ()
+  (is (equal ""
+             (expand-ascii-ranges "")))
+  (is (equal "abc"
+             (expand-ascii-ranges "a-c")))
+  (is (equal "cba"
+             (expand-ascii-ranges "c-a")))
+  (is (equal "-abc-"
+             (expand-ascii-ranges "-a-c-")))
+  (is (equal "abcba"
+             (expand-ascii-ranges "a-c-a")))
+  (is (equal "dcbabcd"
+             (expand-ascii-ranges "d-a-d")))
+  (is (equal "fedcba...ABCDEFEDCBA@?>=<;:9876543210/.-,+"
+             (expand-ascii-ranges "f-a...A-F-+"))))
