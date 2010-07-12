@@ -52,9 +52,10 @@
                             :depends-on ("package"))
                            (:module "m4"
                             :components
-                            ((:file "m4-builtin")
-                             (:file "m4-lexer" :depends-on ("m4-builtin"))
-                             (:file "m4-parser" :depends-on ("m4-builtin" "m4-lexer")))
+                            ((:file "m4-util")
+                             (:file "m4-lexer")
+                             (:file "m4-builtin" :depends-on ("m4-util"))
+                             (:file "m4-parser" :depends-on ("m4-util" "m4-lexer")))
                             :depends-on ("package" "util" "cffi-regex"))
                            (:file "evolvable"   :depends-on ("package" "shell" "path"))
                            (:file "common-lisp" :depends-on ("package" "util" "evolvable" "heredoc"))
