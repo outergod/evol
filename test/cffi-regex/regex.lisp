@@ -1,4 +1,4 @@
-;;;; evol - m4.lisp
+;;;; evol - regex.lisp
 ;;;; Copyright (C) 2010  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
