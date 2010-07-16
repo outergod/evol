@@ -39,6 +39,12 @@ Quit the current running CL instance returning error CODE."
   #-(or ccl clisp gcl sbcl)
     (error 'not-implemented :proc (list 'quit code)))
 
+; posix-mode
+; (sb-posix:stat-mode (sb-posix:stat filename))
+; (nth-value 1 (ccl::%stat filename))
+; (format nil "~O" 33188)
+; (logand 33188 256)
+
 (defun mapthread (function list &rest more-lists)
   "mapthread function list &rest more-lists => list
 
@@ -89,3 +95,15 @@ all slot names/values as key/values from symbol list SLOTS in OBJECT."
                    (setf (gethash slot *environment*) (stringify ,value))))
              ,slots)
        ,@body)))
+
+(defun replace-with-region (replacefn &rest args)
+  "replace-with-region replacefn &rest args => closure
+
+Create closure that is suitable for use with CL-PPCRE replacement forms. Created
+closure invokes REPLACEFN against the matched subsequence in the string to be
+searched additionally passing ARGS."
+  #'(lambda (target-string start end match-start match-end reg-starts reg-ends)
+      (declare (ignore start end match-start match-end))
+      (apply replacefn (subseq target-string
+                               (svref reg-starts 0) (svref reg-ends 0))
+             args)))
