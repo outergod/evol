@@ -16,6 +16,8 @@
 
 (in-package :evol)
 
+(set-dispatch-macro-character #\# #\> 'cl-heredoc:read-heredoc)
+
 (defun posix-argv ()
   "posix-argv => list
 
