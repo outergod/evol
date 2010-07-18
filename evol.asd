@@ -27,7 +27,7 @@
                 :author "Alexander Kahl <e-user@fsfe.org>"
                 :license "GPLv3+"
                 :depends-on (:external-program :cl-fad :cl-ppcre :alexandria
-                             :unix-options :bordeaux-threads :patron)
+                             :unix-options :bordeaux-threads :patron :cl-heredoc)
                 :components
                 ((:module "src"
                           :components
@@ -36,10 +36,8 @@
                            (:file "path"        :depends-on ("package"))
                            (:file "environment" :depends-on ("package"))
                            (:file "dependency"  :depends-on ("package"))
-                           (:file "ring-buffer" :depends-on ("package"))
-                           (:file "heredoc"     :depends-on ("package" "ring-buffer"))
                            (:file "shell"       :depends-on ("package" "util" "environment"))
                            (:file "evolvable"   :depends-on ("package" "shell" "path"))
-                           (:file "common-lisp" :depends-on ("package" "util" "evolvable" "heredoc"))
+                           (:file "common-lisp" :depends-on ("package" "util" "evolvable"))
                            (:file "breeder"     :depends-on ("package" "dependency" "evolvable"))
                            (:file "toplevel"    :depends-on ("package" "breeder"))))))
