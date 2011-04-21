@@ -29,8 +29,8 @@ Please see file INSTALL.
 
 Links and References
 --------------------
-Homepage:           <http://www.cliki.net/evol>
-Hacking (stable):   <http://github.com/e-user/evol>
+Homepage:           <http://www.cliki.net/evol>  
+Hacking (stable):   <http://github.com/e-user/evol>  
 Hacking (unstable): <http://github.com/e-user/evol/tree/unstable>
 
 [auto]: http://www.gnu.org/software/hello/manual/automake/Autotools-Introduction.html
