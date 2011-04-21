@@ -31,7 +31,8 @@
    (slot2 :initarg :slot2)))
 
 (defixture util-environment-fixture
-  (:setup (setq *environment* (make-hash-table))))
+  (setq *environment* (make-hash-table))
+  (-body-))
 
 (deftest test-mapthread ()
   (is (equal (list 2 3 4 5 6)

@@ -32,7 +32,8 @@
   (is (boundp 'env)))
 
 (defixture env-environment-fixture
-  (:setup (setq env (make-hash-table))))
+  (setq env (make-hash-table))
+  (-body-))
 
 (deftest internification ()
   (is (symbolp (internify "foo")))

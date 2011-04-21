@@ -62,11 +62,12 @@
           (list "{foo}" "{{foo}" "{foo}}")))
 
 (defixture shell-environment-fixture
-  (:setup (setq *environment* (make-hash-table))
-          (defenv test1 "42 23")
-          (defenv cc "gcc")
-          (defenv file1 "foo.c")
-          (defenv file2 "bar.c")))
+  (setq *environment* (make-hash-table))
+  (defenv test1 "42 23")
+  (defenv cc "gcc")
+  (defenv file1 "foo.c")
+  (defenv file2 "bar.c")
+  (-body-))
 
 (deftest expanding-%-matches ()
   (with-fixture shell-environment-fixture

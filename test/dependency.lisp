@@ -32,21 +32,23 @@
 (defparameter env nil)
 
 (defixture dep-environment-fixture-1
-  (:setup (setq env (make-hash-table))
-          (setf (gethash 'a env) (list 1 'foo 3)
-                (gethash 'b env) (list 3)
-                (gethash 'foo env) (list 'foo 'bop)
-                (gethash 'baz env) (list 'bop 3))))
+  (setq env (make-hash-table))
+  (setf (gethash 'a env) (list 1 'foo 3)
+        (gethash 'b env) (list 3)
+        (gethash 'foo env) (list 'foo 'bop)
+        (gethash 'baz env) (list 'bop 3))
+  (-body-))
 
 (defixture dep-environment-fixture-2
-  (:setup (setq env (make-hash-table))
-          (setf (gethash 'root env) (list "root" "lvl1:1" "lvl1:2")
-                (gethash 'lvl1-1 env) (list "lvl1:1" "lvl2:1")
-                (gethash 'lvl1-2 env) (list "lvl1:2" "lvl2:1" "lvl4:1")
-                (gethash 'lvl2-1 env) (list "lvl2:1" "lvl3:1" "lvl3:2")
-                (gethash 'lvl3-1 env) (list "lvl3:1")
-                (gethash 'lvl3-2 env) (list "lvl3:2")
-                (gethash 'lvl4-1 env) (list "lvl4:1"))))
+  (setq env (make-hash-table))
+  (setf (gethash 'root env) (list "root" "lvl1:1" "lvl1:2")
+        (gethash 'lvl1-1 env) (list "lvl1:1" "lvl2:1")
+        (gethash 'lvl1-2 env) (list "lvl1:2" "lvl2:1" "lvl4:1")
+        (gethash 'lvl2-1 env) (list "lvl2:1" "lvl3:1" "lvl3:2")
+        (gethash 'lvl3-1 env) (list "lvl3:1")
+        (gethash 'lvl3-2 env) (list "lvl3:2")
+        (gethash 'lvl4-1 env) (list "lvl4:1"))
+  (-body-))
 
 ;; Thanks to lisp-unit
 (defun set-equal (l1 l2 &key (test #'equal))
@@ -137,16 +139,18 @@
                   nodes))))))
 
 (defixture dep-environment-fixture-unresolvable-1
-  (:setup (setq env (make-hash-table))
-          (setf (gethash 'root env) (list "root" "lvl1")
-                (gethash 'lvl1 env) (list "lvl1" "foo"))))
+  (setq env (make-hash-table))
+  (setf (gethash 'root env) (list "root" "lvl1")
+        (gethash 'lvl1 env) (list "lvl1" "foo"))
+  (-body-))
 
 (defixture dep-environment-fixture-circular-1
-  (:setup (setq env (make-hash-table))
-          (setf (gethash 'root env) (list "root" "lvl1")
-                (gethash 'lvl1 env) (list "lvl1" "lvl2")
-                (gethash 'lvl2 env) (list "lvl2" "lvl3")
-                (gethash 'lvl3 env) (list "lvl3" "lvl1"))))
+  (setq env (make-hash-table))
+  (setf (gethash 'root env) (list "root" "lvl1")
+        (gethash 'lvl1 env) (list "lvl1" "lvl2")
+        (gethash 'lvl2 env) (list "lvl2" "lvl3")
+        (gethash 'lvl3 env) (list "lvl3" "lvl1"))
+  (-body-))
 
 (deftest resolution-unresolvable (nodes)
   (signals unresolvable-dependency

@@ -17,10 +17,10 @@
 (in-package :evol-test-system)
 
 (defpackage :evol-test
-  (:use :cl :evol :stefil)
+  (:use :cl :evol :hu.dwim.stefil)
   (:export :all))
 
 (in-package :evol-test)
 
-(in-root-suite)
+(in-suite root-suite)
 (defsuite all)
