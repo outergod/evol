@@ -27,7 +27,8 @@
                 :author "Alexander Kahl <e-user@fsfe.org>"
                 :license "GPLv3+"
                 :depends-on (:external-program :cl-fad :cl-ppcre :alexandria
-                             :unix-options :bordeaux-threads :patron :cl-heredoc)
+                             :unix-options :bordeaux-threads :patron :cl-heredoc
+                             :osicat)
                 :components
                 ((:module "src"
                           :components

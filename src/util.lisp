@@ -41,12 +41,6 @@ Quit the current running CL instance returning error CODE."
   #-(or ccl clisp gcl sbcl)
     (error 'not-implemented :proc (list 'quit code)))
 
-; posix-mode
-; (sb-posix:stat-mode (sb-posix:stat filename))
-; (nth-value 1 (ccl::%stat filename))
-; (format nil "~O" 33188)
-; (logand 33188 256)
-
 (defun mapthread (function list &rest more-lists)
   "mapthread function list &rest more-lists => list
 
