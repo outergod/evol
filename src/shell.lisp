@@ -159,9 +159,9 @@ Lookup match in the environment CL was started in returning the result."
 (defun deflate-string (list &optional (separator " "))
   "deflate-string list &optional separator => string|object
 
-Splice list of strings into merged string having elements separated with string
+Splice list of strings into merged string with elements separated by string
 seperator."
   (if (listp list)
       (format nil (concatenate 'string "~{~a~^" separator "~}")
               list separator)
-    list))
+      list))
