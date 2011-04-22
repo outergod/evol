@@ -1,5 +1,5 @@
 ;;;; evol - environment.lisp
-;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
+;;;; Copyright (C) 2009 2011  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -50,9 +50,7 @@ Store val for key var in hash environment."
   "posix-getenv name => string
 
 Return value for POSIX environmental key name, empty string if nothing found."
-  #+sbcl (or (sb-ext:posix-getenv name) "")
-  #+ccl (or (ccl:getenv name) "")
-  #-(or sbcl ccl) "")
+  (or (osicat-posix:getenv name) ""))
 
 (defun internify (name)
   "internify name => symbol
