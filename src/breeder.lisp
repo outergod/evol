@@ -134,10 +134,9 @@ evolution result."
 
 Swarm-based evolution. Works through creating new threads per edge / dag node /
 branch (equivalent here) while locking the evolvables encountered. Breeding is
-forwarded to the Patron queue that works by using a thread pool itself so
-welcome to deadlock wonderland!
-There is considerable overhead involved in this method but payoff should be
-reached early even for simple real-life evolutions with mediocre complexity."
+forwarded to the Patron queue that works by using a thread pool itself.
+The overhead involved caused by using this method should pay off early even for
+simple real-life evolutions with mediocre complexity."
   (let ((env-lock (bt:make-lock "env")))
     (labels ((acc (branch)
                   (if (null branch)
