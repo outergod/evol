@@ -26,7 +26,7 @@
                 :version "0.0.1"
                 :author "Alexander Kahl <e-user@fsfe.org>"
                 :license "GPLv3+"
-                :depends-on (:external-program :cl-fad :cl-ppcre :alexandria
+                :depends-on (:external-program :cl-ppcre :alexandria
                              :unix-options :bordeaux-threads :patron :cl-heredoc
                              :osicat)
                 :components

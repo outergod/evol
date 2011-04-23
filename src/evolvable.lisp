@@ -1,5 +1,5 @@
 ;;;; evol - evolvable.lisp
-;;;; Copyright (C) 2009, 2010  Alexander Kahl <e-user@fsfe.org>
+;;;; Copyright (C) 2009 2010 2011  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -184,7 +184,7 @@ of... files. Their existence can easily be checked through their distinct
 pathnames."))
 
 (defmethod evolved-p ((file file))
-  (file-exists-p (cl-fad:pathname-as-file (name file))))
+  (file-exists-p (osicat:pathname-as-file (name file))))
 
 
 ;;; executable

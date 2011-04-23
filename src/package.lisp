@@ -18,12 +18,11 @@
 
 (defpackage :evol
   (:nicknames :love)
-  (:use :cl :external-program :cl-fad :alexandria)
+  (:use :cl :external-program :alexandria)
   (:shadow :copy-stream :copy-file)
   (:export :pathname-suffix-p
            :pathname-change-suffix
            :run-command
-           :default-sourcefn
            :defenv
            :getenv
            :*environment*
