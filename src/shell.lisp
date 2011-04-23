@@ -66,8 +66,8 @@ non-nil."
           (error 'command-failure :command cmd :code code :stdout stdout :stderr stderr)
         (values code stdout stderr)))))
 
-(defun interpolate-commandline (cmd &key (target "") (sourcefn #'default-sourcefn) (environment *environment*))
-  "interpolate-commandline cmd &key target sourcefn environment => list
+(defun interpolate-commandline (cmd &optional (environment *environment*))
+  "interpolate-commandline cmd &optional environment => list
 
 Interpolate split arguments of command line string CMD after grouping through
 Bourne shell syntax block quoting, see split-commandline for details.
@@ -78,17 +78,10 @@ Returns list of split and interpolated arguments."
    (mapcar #'(lambda (arg)
                (case (char arg 0)
                  (#\' (string-trim "'" arg))
-                 (#\" (string-trim "\"" (interpolate-argument arg target sourcefn environment)))
+                 (#\" (string-trim "\"" (interpolate-argument arg environment)))
                  (t   (split-commandline
-                       (interpolate-argument arg target sourcefn environment)))))
+                       (interpolate-argument arg environment)))))
            (split-commandline cmd))))
-
-(defun default-sourcefn (target modifier)
-  "default-sourcefn target modifier => string
-
-Default source computing function that does nothing but ignoring all arguments
-and always returns an empty string."
-  (declare (ignore target modifier)) "")
 
 (defun split-commandline (cmd)
   "split-commandline cmd => list
@@ -97,20 +90,20 @@ Split command line string cmd into arguments accourding to Bourne shell syntax
 rules honoring double quotes [\"], single quotes ['] and regular whitespace."
   (cl-ppcre:all-matches-as-strings "'[^']*'|\"[^\"]*\"|\\S+" cmd))
 
-(defun interpolate-argument (argument target sourcefn environment)
-  "interpolate-argument argument target sourcefn environment => list
+(defun interpolate-argument (argument environment)
+  "interpolate-argument argument environment => list
 
 Expand all % and $ matches in string argument in turn."
   (interpolate-$-argument
-   (interpolate-%-argument argument target sourcefn environment)))
+   (interpolate-%-argument argument environment)))
 
-(defun interpolate-%-argument (argument target sourcefn environment)
-  "interpolate-%-argument argument target sourcefn environment => string
+(defun interpolate-%-argument (argument environment)
+  "interpolate-%-argument argument environment => string
 
 Expand all matches of % words in string ARGUMENT honoring the special TARGET and
 SOURCEFN matches and, for the rest, the ENVIRONMENT."
   (cl-ppcre:regex-replace-all "%({[^}%()\"]*}|[^ %()\"]*)" argument
-                              (replace-with-region #'expand-%-match target sourcefn environment)))
+                              (replace-with-region #'expand-%-match environment)))
 
 (defun interpolate-$-argument (argument)
   "interpolate-$-argument argument => string
@@ -125,29 +118,21 @@ Expand all matches of $ words in string ARGUMENT."
 Trims {} brackets strings."
   (string-left-trim "{" (string-right-trim "}" string)))
 
-(defun expand-%-match (match target sourcefn environment)
-  "expand-%-match match target sourcefn environment => string
+(defun expand-%-match (match environment)
+  "expand-%-match match environment => string
 
 Act depending on string match:
 - % returns %
-- @ returns target
-- < returns result of invoking sourcefn against target and modifier
-- Any other sequence will be looked up in evol's environment returning the
-  result, defaulting to an empty string
-- In case of @ and <, if target respectively sourcefn invocation returns a list,
-  it will be auto-deflated to a string with spaces as element seperator. To
-  modify the deflation seperator, simply pass any non-whitespace character
-  sequence after @ or <, e.g.
-  [@,] for target := (foo bar baz) => \"foo,bar,baz\""
+- @ is an alias for out
+- < is an alias for in"
   (let* ((stripped-match (trim-{} match))
          (modifier (if (> (length stripped-match) 1)
                        (subseq stripped-match 1) " ")))
     (case (char stripped-match 0)
       (#\% "%")
-      (#\@ (deflate-string target modifier))
-      (#\< (deflate-string (funcall sourcefn target modifier)))
-      (t (or (deflate-string
-               (getenv stripped-match :env environment))
+      (#\@ (getenv "out" :env environment))
+      (#\< (getenv "in" :env environment))
+      (t (or (getenv stripped-match :env environment)
              "")))))
 
 (defun expand-$-match (match)
@@ -155,13 +140,3 @@ Act depending on string match:
 
 Lookup match in the environment CL was started in returning the result."
   (posix-getenv (trim-{} match)))
-
-(defun deflate-string (list &optional (separator " "))
-  "deflate-string list &optional separator => string|object
-
-Splice list of strings into merged string with elements separated by string
-seperator."
-  (if (listp list)
-      (format nil (concatenate 'string "~{~a~^" separator "~}")
-              list separator)
-      list))
