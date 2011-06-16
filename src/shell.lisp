@@ -43,6 +43,21 @@ failed."))
             (command-failure-code condition)))
 
 
+(defun run-bash (cmd &key (verbose t) (fatal nil) (separator "\\n"))
+  "run-bash cmd &key verbose fatal separator => (integer string string)
+
+Run command string CMD by passing in the interpolation result as a Bash
+invocation to RUN-COMMAND. Additionally, output (stdout and stderr) are split by
+SEPARATOR."
+  (multiple-value-bind (code stdout stderr)
+      (run-command (list "bash" "-c"
+                         (format nil "~{~a~^ ~}"
+                                 (interpolate-commandline cmd)))
+                   :verbose verbose :fatal fatal)
+    (values code
+            (cl-ppcre:split "\\n" stdout)
+            (cl-ppcre:split "\\n" stderr))))
+
 (defun run-command (cmd &key (verbose t) (fatal nil))
   "run-command cmd &key verbose fatal => (integer string string)
 
@@ -51,10 +66,10 @@ invocation and strings of stdout and stderr output. If FATAL is non-nil and exit
 status is not 0, signal COMMAND-FAILURE instead.
 Side-effect: Print CMD prior to invocation and command output if VERBOSE is
 non-nil."
-  (labels ((conditional-format (destination control-string &rest format-arguments)
-             (when verbose
-               (let ((*print-pretty* nil))
-                 (apply #'format destination control-string format-arguments)))))
+  (flet ((conditional-format (destination control-string &rest format-arguments)
+           (when verbose
+             (let ((*print-pretty* nil))
+               (apply #'format destination control-string format-arguments)))))
     (conditional-format t "~a~%" cmd)
     (multiple-value-bind (code stdout stderr)
         (with-outputs-to-strings (stdout stderr)
@@ -64,7 +79,7 @@ non-nil."
       (conditional-format t "~a" stdout)
       (if (and (/= 0 code) fatal)
           (error 'command-failure :command cmd :code code :stdout stdout :stderr stderr)
-        (values code stdout stderr)))))
+          (values code stdout stderr)))))
 
 (defun interpolate-commandline (cmd &optional (environment *environment*))
   "interpolate-commandline cmd &optional environment => list
@@ -74,7 +89,7 @@ Bourne shell syntax block quoting, see split-commandline for details.
 Unquoted quotes are stripped after interpolation, single quotes prevent
 interpolation of their contained argument while double quotes don't.
 Returns list of split and interpolated arguments."
-  (alexandria:flatten
+  (flatten
    (mapcar #'(lambda (arg)
                (case (char arg 0)
                  (#\' (string-trim "'" arg))
@@ -100,8 +115,8 @@ Expand all % and $ matches in string argument in turn."
 (defun interpolate-%-argument (argument environment)
   "interpolate-%-argument argument environment => string
 
-Expand all matches of % words in string ARGUMENT honoring the special TARGET and
-SOURCEFN matches and, for the rest, the ENVIRONMENT."
+Expand all matches of % words in string ARGUMENT honoring the special in and
+out matches and, for the rest, the ENVIRONMENT."
   (cl-ppcre:regex-replace-all "%({[^}%()\"]*}|[^ %()\"]*)" argument
                               (replace-with-region #'expand-%-match environment)))
 
