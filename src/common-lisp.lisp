@@ -115,9 +115,9 @@ core."))
 
 (defmethod evolve :around ((core cl-core) &rest args &key &allow-other-keys)
   (let ((*environment* (alexandria:copy-hash-table *environment*)))
-    (setf (gethash 'cl-save *environment*) (ecase (cl-implementation core)
-                                             (:sbcl "sb-ext:save-lisp-and-die")
-                                             (:ccl  "ccl:save-application")))
+    (setf (getenv "cl-save") (ecase (cl-implementation core)
+                               (:sbcl "sb-ext:save-lisp-and-die")
+                               (:ccl  "ccl:save-application")))
     (call-next-method)))
 
 
@@ -137,6 +137,6 @@ binary."))
 
 (defmethod evolve :around ((exe cl-exe) &rest args &key &allow-other-keys)
   (let ((*environment* (alexandria:copy-hash-table *environment*)))
-    (setf (gethash 'cl-executable *environment*) (ecase (cl-implementation exe)
-                                                   (:sbcl ":executable t")))
+    (setf (getenv "cl-executable") (ecase (cl-implementation exe)
+                                     (:sbcl ":executable t")))
     (call-next-method)))
