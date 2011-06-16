@@ -22,8 +22,14 @@
 (defclass evolvable ()
   ((name :reader   name
          :initarg  :name
-         :initform (alexandria:required-argument :name)
+         :initform (required-argument :name)
          :documentation "The name of the evolvable, also available in evol's environment")
+   (inputs :accessor inputs
+           :initarg :inputs
+           :initform nil)
+   (outputs :accessor outputs
+            :initarg :outputs
+            :initform nil)
    (dependencies :accessor dependencies
                  :initarg  :deps
                  :initform nil
@@ -46,9 +52,9 @@
 (defmethod initialize-instance :after ((evol evolvable) &rest initargs)
   "initialize-instance :after evol &rest initargs => evol
 
-Also register evolvable in the evol *environment*"
+Also register EVOLVABLE in the evol *ENVIRONMENT*."
   (declare (ignore initargs))
-  (setf (gethash (internify (name evol)) *environment*) evol))
+  (setf (getenv (name evol)) evol))
 
 (defmethod print-object ((evol evolvable) stream)
   "print-object evolvable stream => nil
@@ -100,7 +106,7 @@ RESET all evolvables in hashtable ENV. Useful for development."
   (mapc #'(lambda (object)
             (reset object))
           (remove-if-not #'evolvable-p
-                         (alexandria:hash-table-values env))))
+                         (hash-table-values env))))
 
 
 ;;; virtual class
@@ -116,11 +122,11 @@ evolve."))
 (defclass hive (virtual)
   ((of    :reader   :of
           :initarg  :of
-          :initform (alexandria:required-argument :of)
+          :initform (required-argument :of)
           :documentation "The subtype of evolvable to harbor")
    (spawn :reader   :spawn
           :initarg  :spawn
-          :initform (alexandria:required-argument :spawn)
+          :initform (required-argument :spawn)
           :documentation "Source of spawn evolvables; can be a function or a list"))
   (:documentation "Hives are similar to virtuals but enable mass spawning of
 evolvables they auto-depend on so depending on a hive saves from declaring
@@ -153,12 +159,7 @@ Hives expand to a list of their dependencies' names."
 (defclass definite (evolvable)
   ((rule :accessor rule
          :initarg :rule
-         :documentation "The rule used to evolve the definite")
-   (sourcefn :accessor sourcefn
-             :initarg :sourcefn
-             :initform #'default-sourcefn
-             :documentation "The function to compute the input from other slots
-like e.g. target and name"))
+         :documentation "The rule used to evolve the definite"))
   (:documentation "Definite evolvables define transformation rules and
 computation of their effective input(s) to evolve, possibly from some kind of
 sources."))
@@ -195,8 +196,7 @@ source code contained within. This class ensures its file is executable after
 creation."))
 
 (defmethod evolve :after ((exe executable) &rest args &key &allow-other-keys)
-  (run-command
-   (interpolate-commandline "chmod +x %@" :target (name exe))))
+  (run-command (interpolate-commandline "chmod +x %@" :target (name exe))))
 
 
 ;;;; Generic
@@ -204,16 +204,13 @@ creation."))
 (defclass generic-transformator (definite)
   ((rule :accessor rule
          :initarg :rule
-         :initform (alexandria:required-argument :rule)))
+         :initform (required-argument :rule)))
   (:documentation "Objects of this kind evolve through running an external
 program through interpolating the rule and source function contained within
 honoring common quoting rules in line with Bourne shell syntax."))
 
 (defmethod evolve ((trans generic-transformator) &rest args &key &allow-other-keys)
-  (run-command
-   (interpolate-commandline (rule trans)
-                            :target (name trans) :sourcefn (sourcefn trans)
-                            :environment *environment*)))
+  (run-command (interpolate-commandline (rule trans) *environment*)))
 
 
 ;;; generic class
