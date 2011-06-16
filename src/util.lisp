@@ -79,18 +79,32 @@ If OBJECT is a STRING, return it - else cast WRITE-TO-STRING."
       object
     (write-to-string object)))
 
+(defmacro env-let (bindings &body body)
+  "env let bindings &body body => context
+
+Evaluate BODY in scope of overridden *ENVIRONMENT* that is extended by
+LET-style key/value BINDINGS list."
+  (let ((%bindings (gensym)))
+    `(let ((,%bindings ,bindings)
+           (*environment* (copy-hash-table *environment*)))
+       (mapc #'(lambda (binding)
+                 (destructuring-bind (name value)
+                     binding
+                   (setf (getenv name) value)))
+             ,%bindings)
+       ,@body)))
+
 (defmacro with-slot-enhanced-environment ((slots object) &body body)
   "with-slot-enhanced-environment (slots object) body => context
 
 Create lexical context overriding *ENVIRONMENT* with a fresh copy enhanced by
 all slot names/values as key/values from symbol list SLOTS in OBJECT."
-  (let ((value (gensym)))
-    `(let ((*environment* (alexandria:copy-hash-table *environment*)))
-       (mapc #'(lambda (slot)
-                 (let ((,value (slot-value ,object slot)))
-                   (setf (gethash slot *environment*) (stringify ,value))))
-             ,slots)
-       ,@body)))
+  (let ((%object (gensym)))
+    `(let ((,%object ,object))
+       (env-let (mapcar #'(lambda (slot)
+                            (list slot (slot-value ,%object slot)))
+                        ',slots)
+         ,@body))))
 
 (defun replace-with-region (replacefn &rest args)
   "replace-with-region replacefn &rest args => closure
