@@ -16,7 +16,7 @@
 
 (in-package :evol)
 
-(defparameter *environment* (make-hash-table))
+(defparameter *environment* (make-hash-table :test #'equal))
 
 (defgeneric expand (standard-object)
   (:documentation "expand standard-object => string
@@ -34,38 +34,20 @@ Just return IDENTITY of the OBJECT."
 
 Return object stored for key var from hash :env and :expand the object for
 external command use if desired."
-  (let ((result (gethash (internify var) env default)))
+  (let ((result (gethash var env default)))
     (if (and expanded
              (typep result 'standard-object))
         (expand result)
       result)))
 
-(defmacro defenv (var val &optional (environment '*environment*))
-  "defenv var val &optional environment => val
+(defun (setf getenv) (val var &optional (environment *environment*))
+  "(setf geten) var val &optional environment => val
 
-Store val for key var in hash environment."
-  `(setf (gethash (symbolize ,var) ,environment) ,val))
+Store VAL for key VAR in hash table ENVIRONMENT."
+  (setf (gethash var environment) val))
 
 (defun posix-getenv (name)
   "posix-getenv name => string
 
 Return value for POSIX environmental key name, empty string if nothing found."
   (or (osicat-posix:getenv name) ""))
-
-(defun internify (name)
-  "internify name => symbol
-
-Return interned symbol for arbitrarily typed name; useful for use as hash keys."
-  (cond ((symbolp name) name)
-        ((stringp name) (intern (string-upcase name) 'evol))
-        (t (intern (string-upcase (write-to-string name)) 'evol))))
-
-(defmacro symbolize (name)
-  "symbolize name => symbol
-
-Quotes, transforms and interns unquoted variable names."
-  `(quote
-    ,(internify
-      (if (symbolp name)
-          (symbol-name name)
-        (eval name)))))

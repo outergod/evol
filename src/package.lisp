@@ -23,7 +23,6 @@
   (:export :pathname-suffix-p
            :pathname-change-suffix
            :run-command
-           :defenv
            :getenv
            :*environment*
            :repl))
