@@ -99,11 +99,13 @@ LET-style key/value BINDINGS list."
 
 Create lexical context overriding *ENVIRONMENT* with a fresh copy enhanced by
 all slot names/values as key/values from symbol list SLOTS in OBJECT."
-  (let ((%object (gensym)))
-    `(let ((,%object ,object))
+  (let ((%object (gensym))
+        (%slots (gensym)))
+    `(let ((,%object ,object)
+           (,%slots ,slots))
        (env-let (mapcar #'(lambda (slot)
                             (list slot (slot-value ,%object slot)))
-                        ',slots)
+                        ,%slots)
          ,@body))))
 
 (defun replace-with-region (replacefn &rest args)
