@@ -114,7 +114,7 @@ Feed rule with a list of asdf-recognized package symbols to load into the
 core."))
 
 (defmethod evolve :around ((core cl-core) &rest args &key &allow-other-keys)
-  (let ((*environment* (alexandria:copy-hash-table *environment*)))
+  (let ((*environment* (copy-hash-table *environment*)))
     (setf (getenv "cl-save") (ecase (cl-implementation core)
                                (:sbcl "sb-ext:save-lisp-and-die")
                                (:ccl  "ccl:save-application")))
@@ -136,7 +136,7 @@ Feed rule with a list of asdf-recognized package symbols to load into the
 binary."))
 
 (defmethod evolve :around ((exe cl-exe) &rest args &key &allow-other-keys)
-  (let ((*environment* (alexandria:copy-hash-table *environment*)))
+  (let ((*environment* (copy-hash-table *environment*)))
     (setf (getenv "cl-executable") (ecase (cl-implementation exe)
                                      (:sbcl ":executable t")))
     (call-next-method)))
