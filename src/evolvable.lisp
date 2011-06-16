@@ -16,6 +16,13 @@
 
 (in-package :evol)
 
+;;; conditions
+(define-condition hive-burst (error)
+  ((spawn :initarg :spawn
+          :reader  spawn-burst-of))
+  (:documentation "Condition that signals a HIVE has hatched and child
+evolvables have been created and need to be taken into account during evolution processes."))
+
 
 ;;; classes
 ;;; evolvable, base target class
@@ -33,7 +40,7 @@
    (dependencies :accessor dependencies
                  :initarg  :deps
                  :initform nil
-                 :documentation "List of evolvables this one depends on")
+                 :documentation "List of supplementary evolvables this one depends on")
    (env-slots :accessor env-slots
               :initarg  :env-slots
               :initform nil
@@ -74,12 +81,14 @@ Expand EVOL to its name."
     "evolve :after evol &rest args &key &allow-other-keys => t
 
 Mark evolvable EVOL hatched."
+    (declare (ignore args))
     (setf (hatched evol) t))
   (:method :around ((evol evolvable) &rest args &key &allow-other-keys)
     "evolve :around evol &rest args &key &allow-other-keys => context
 
 Call the next method in scope of a copy of *ENVIRONMENT* enhanced by all slots
 in EVOL specified by ENV-SLOTS."
+    (declare (ignore args))
     (with-slot-enhanced-environment ((env-slots evol) evol)
       (call-next-method))))
 
@@ -127,26 +136,39 @@ evolve."))
    (spawn :reader   :spawn
           :initarg  :spawn
           :initform (required-argument :spawn)
-          :documentation "Source of spawn evolvables; can be a function or a list"))
-  (:documentation "Hives are similar to virtuals but enable mass spawning of
-evolvables they auto-depend on so depending on a hive saves from declaring
-lots of mutual evolvables manually."))
+          :documentation "Source of spawn evolvables; can be a function or a list")
+   (trigger :accessor hive-trigger
+            :documentation "Thunk created during INITIALIZE-INSTANCE :AFTER that
+gets evaluated upon evolution."))
+  (:documentation "Hives enable mass spawning of evolvables during evolution;
+that way, indeterminate builds can be accomplished."))
 
 (defmethod initialize-instance :after ((hive hive) &rest initargs &key &allow-other-keys)
   "initialize-instance :after hive &rest initargs &key &allow-other-keys => void
 
-Create an EVOLVABLE :OF type for each :SPAWN with all key arguments proxied
-but :NAME, :OF:, :SPAWN and have the HIVE itself auto-depend on them."
+Bind a thunk to HIVE's TRIGGER that creates an EVOLVABLE :OF type for each
+:SPAWN with all key arguments proxied but :NAME, :OF:, :SPAWN and have the HIVE
+itself auto-depend on them."
   (let ((of (getf initargs :of))
         (spawn (getf initargs :spawn))
         (spawnargs (remove-from-plist initargs :name :of :spawn)))
-    (setf (dependencies hive)
-          (mapcar #'(lambda (name)
-                      (name
-                       (apply #'make-instance of :name name spawnargs)))
-                  (if (functionp spawn)
-                      (funcall spawn)
-                    spawn)))))
+    (with-accessors ((deps dependencies)
+                     (trigger hive-trigger))
+        hive
+      (setq trigger #'(lambda ()
+                        (setq deps
+                              (mapcar #'(lambda (name)
+                                          (name (apply #'make-instance of :name name spawnargs)))
+                                      (if (functionp spawn)
+                                          (funcall spawn)
+                                          spawn))))))))
+
+(defmethod evolve ((hive hive) &rest args &key &allow-other-keys)
+    "evolve hive &rest args &key &allow-other-keys => condition
+
+Call HIVE's TRIGGER thunk. Signals HIVE-BURST condition."
+    (declare (ignore args))
+    (signal 'hive-burst :spawn (funcall (hive-trigger hive))))
 
 (defmethod expand ((hive hive))
   "expand hive => list
