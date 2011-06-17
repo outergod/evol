@@ -1,10 +1,11 @@
 CC = cc
-OBJECTS = main.o program.o
+SOURCES = $(shell ls *.c)
+OBJECTS = $(SOURCES:.c=.o)
 
 all: main
 
 $(OBJECTS):
-	cc ${CFLAGS} -c -o $@ $(@:.o=.c)
+	${CC} ${CFLAGS} -c -o $@ $(@:.o=.c)
 
 main: $(OBJECTS)
 
