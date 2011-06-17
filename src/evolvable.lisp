@@ -51,7 +51,7 @@ evolvables have been created and need to be taken into account during evolution 
    (waitqueue :reader   waitqueue
               :initform (bt:make-condition-variable)
               :documentation "Wait queue used for multithreaded breeding")
-   (hatched   :accessor hatched
+   (hatched   :accessor hatched-p
               :initform nil
               :documentation "Whether evolution is finished"))
   (:documentation "Base class for all evolvables."))
@@ -82,7 +82,7 @@ Expand EVOL to its name."
 
 Mark evolvable EVOL hatched."
     (declare (ignore args))
-    (setf (hatched evol) t))
+    (setf (hatched-p evol) t))
   (:method :around ((evol evolvable) &rest args &key &allow-other-keys)
     "evolve :around evol &rest args &key &allow-other-keys => context
 
@@ -101,7 +101,7 @@ Reset evolution of EVOLVABLE.")
     "reset evolvable => nil
 
 Set slot HATCHED back to nil. Useful for development (only?)."
-    (setf (hatched evol) nil)))
+    (setf (hatched-p evol) nil)))
 
 (defun evolvable-p (object)
   "evolvable-p object => boolean
@@ -139,8 +139,14 @@ evolve."))
           :initform (required-argument :spawn)
           :documentation "Source of spawn evolvables; can be a function or a list")
    (trigger :accessor hive-trigger
+            :initform nil
             :documentation "Thunk created during INITIALIZE-INSTANCE :AFTER that
-gets evaluated upon evolution."))
+gets evaluated upon evolution.")
+   (burst :accessor burst-p
+          :initform nil
+          :documentation "Hatch pre-state: Tells whether evolution has already
+been triggered once so the spawn has been created and a second attempt will
+finally finish evolution (hatching)."))
   (:documentation "Hives enable mass spawning of evolvables during evolution;
 that way, indeterminate builds can be accomplished."))
 
@@ -159,7 +165,7 @@ itself auto-depend on them."
       (setq trigger #'(lambda ()
                         (setq deps
                               (mapcar #'(lambda (name)
-                                          (name (apply #'make-instance of :name name spawnargs)))
+                                          (apply #'make-instance of :name name spawnargs))
                                       (if (functionp spawn)
                                           (funcall spawn)
                                           spawn))))))))
@@ -169,8 +175,12 @@ itself auto-depend on them."
 
 Call HIVE's TRIGGER thunk. Signals HIVE-BURST condition."
     (declare (ignore args))
-    (setf (hatched hive) t)
-    (signal 'hive-burst :spawn (funcall (hive-trigger hive))))
+    (with-accessors ((burst burst-p))
+        hive
+      (or burst
+          (progn
+            (setq burst t)
+            (signal 'hive-burst :spawn (funcall (hive-trigger hive)))))))
 
 (defmethod expand ((hive hive))
   "expand hive => list
@@ -181,12 +191,15 @@ Hives expand to a list of their dependencies' names."
 
 ;;; definite class
 (defclass definite (evolvable)
-  ((rule :accessor rule
-         :initarg :rule
-         :documentation "The rule used to evolve the definite"))
-  (:documentation "Definite evolvables define transformation rules and
-computation of their effective input(s) to evolve, possibly from some kind of
-sources."))
+  ((rules :accessor rules
+          :initarg :rules
+          :documentation "The rules used to evolve the definite"))
+  (:documentation "Definite evolvables define transformation rules."))
+
+(defmethod evolve ((definite definite) &rest args &key &allow-other-keys)
+  (declare (ignore args))
+  (mapcar #'funcall
+          (rules definite)))
 
 
 ;;; checkable class
@@ -223,25 +236,25 @@ creation."))
   (run-command (interpolate-commandline "chmod +x %@" :target (name exe))))
 
 
-;;;; Generic
-;;; generic-transformator class
-(defclass generic-transformator (definite)
-  ((rule :accessor rule
-         :initarg :rule
-         :initform (required-argument :rule)))
-  (:documentation "Objects of this kind evolve through running an external
-program through interpolating the rule and source function contained within
-honoring common quoting rules in line with Bourne shell syntax."))
+;; ;;;; Generic
+;; ;;; generic-transformator class
+;; (defclass generic-transformator (definite)
+;;   ((rule :accessor rule
+;;          :initarg :rule
+;;          :initform (required-argument :rule)))
+;;   (:documentation "Objects of this kind evolve through running an external
+;; program through interpolating the rule and source function contained within
+;; honoring common quoting rules in line with Bourne shell syntax."))
 
-(defmethod evolve ((trans generic-transformator) &rest args &key &allow-other-keys)
-  (run-command (interpolate-commandline (rule trans) *environment*)))
-
-
-;;; generic class
-(defclass generic (generic-transformator file) ()
-  (:documentation "TODO"))
+;; (defmethod evolve ((trans generic-transformator) &rest args &key &allow-other-keys)
+;;   (run-command (interpolate-commandline (rule trans) *environment*)))
 
 
-;;; program class
-(defclass program (generic-transformator executable) ()
-  (:documentation "TODO"))
+;; ;;; generic class
+;; (defclass generic (generic-transformator file) ()
+;;   (:documentation "TODO"))
+
+
+;; ;;; program class
+;; (defclass program (generic-transformator executable) ()
+;;   (:documentation "TODO"))
