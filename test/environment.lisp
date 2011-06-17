@@ -1,5 +1,5 @@
 ;;;; evol - environment.lisp
-;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
+;;;; Copyright (C) 2009 2011  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 (in-package :evol)
 
 (shadowing-import
- '(posix-getenv internify)
+ '(posix-getenv)
  (find-package :evol-test))
 
 (in-package :evol-test)
@@ -35,12 +35,6 @@
   (setq env (make-hash-table))
   (-body-))
 
-(deftest internification ()
-  (is (symbolp (internify "foo")))
-  (is (symbolp (internify 'foo)))
-  (is (symbolp (internify 4)))
-  (is (symbolp (internify #\a))))
-
 (deftest getenv-default-nonexist ()
   (with-fixture env-environment-fixture
     (is (stringp (getenv 'XXX :env env)))
@@ -48,10 +42,10 @@
 
 (deftest put-string ()
   (with-fixture env-environment-fixture
-    (defenv 'foo "bar" env)
+    (setf (getenv 'foo :env env) "bar")
     (is (string= "bar" (gethash 'foo env "")))))
 
 (deftest get-string ()
   (with-fixture env-environment-fixture
-    (defenv 'foo "bar" env)
+    (setf (getenv 'foo :env env) "bar")
     (is (string= "bar" (getenv 'foo :env env)))))
