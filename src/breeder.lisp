@@ -124,10 +124,12 @@ evolution result."
                                                 (evolve evol :formatfn formatfn))
                                   :result-report-function finishfn
                                   :error-report-function  finishfn))))
+
         (bt:condition-wait job-waitqueue job-lock)
+
         (if (slot-boundp job 'condition)
             (error (patron:condition-of job))
-          (patron:result-of job))))))
+            (patron:result-of job))))))
 
 (defmethod breed ((swarm swarm) (evol evolvable))
   "breed swarm evolvable => result-dag
@@ -144,10 +146,20 @@ simple real-life evolutions with mediocre complexity."
                     (let* ((evol (safe-getenv env-lock (car branch)))
                            (evol-lock (mutex evol)))
                       (bt:with-lock-held (evol-lock)
-                        (or (hatched evol) ;; TODO handle hive-bursts
-                            (eval-reverse-cons
-                             (enqueue-breeding swarm evol)
-                             (mapthread #'rec (cdr branch)))))))))
+                        (locked-breed evol branch)))))
+             (locked-breed (evol branch)
+               (or (hatched-p evol)
+                   (handler-case (eval-reverse-cons
+                                  (bt:with-lock-held (env-lock)
+                                    (enqueue-breeding swarm evol))
+                                  (mapthread #'rec (cdr branch)))
+                     (hive-burst (condition)
+                       (locked-breed evol
+                                     (resolve-dag (list (name evol))
+                                                  (mapcar #'(lambda (elt)
+                                                              (dependency-node #'name #'dependencies elt))
+                                                          (cons evol
+                                                                (spawn-burst-of condition))))))))))
       (with-dependency-nodes nodes
         (reinitialize-instance swarm :job-capacity (length nodes))
         (rec (resolve-dag (find-node (name evol) nodes) nodes))))))
