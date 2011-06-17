@@ -138,19 +138,16 @@ forwarded to the Patron queue that works by using a thread pool itself.
 The overhead involved caused by using this method should pay off early even for
 simple real-life evolutions with mediocre complexity."
   (let ((env-lock (bt:make-lock "env")))
-    (labels ((acc (branch)
+    (labels ((rec (branch)
                   (if (null branch)
                       nil
                     (let* ((evol (safe-getenv env-lock (car branch)))
                            (evol-lock (mutex evol)))
                       (bt:with-lock-held (evol-lock)
-                        (if (hatched evol)
-                            t
-                          (eval-reverse-cons
-                           (enqueue-breeding swarm evol)
-                           (mapthread #'(lambda (branch)
-                                          (acc branch))
-                                      (cdr branch)))))))))
-     (with-dependency-nodes nodes
-       (reinitialize-instance swarm :job-capacity (length nodes))
-       (acc (resolve-dag (find-node (name evol) nodes) nodes))))))
+                        (or (hatched evol) ;; TODO handle hive-bursts
+                            (eval-reverse-cons
+                             (enqueue-breeding swarm evol)
+                             (mapthread #'rec (cdr branch)))))))))
+      (with-dependency-nodes nodes
+        (reinitialize-instance swarm :job-capacity (length nodes))
+        (rec (resolve-dag (find-node (name evol) nodes) nodes))))))
