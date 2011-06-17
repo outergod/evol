@@ -1,5 +1,5 @@
 ;;;; evol - util.lisp
-;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
+;;;; Copyright (C) 2009 2011  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -52,8 +52,7 @@ threads created that way."
                               (bt:make-thread #'(lambda ()
                                                   (apply function
                                                          (car args)
-                                                         (cdr args)))
-                                              :name (gensym)))
+                                                         (cdr args)))))
                  list more-lists)))
 
 (defmacro with-outputs-to-strings ((&rest vars) &body forms-decls)
@@ -94,8 +93,8 @@ LET-style key/value BINDINGS list."
              ,%bindings)
        ,@body)))
 
-(defmacro with-slot-enhanced-environment ((slots object) &body body)
-  "with-slot-enhanced-environment (slots object) body => context
+(defmacro with-slot-enhanced-environment (slots object &body body)
+  "with-slot-enhanced-environment slots object body => context
 
 Create lexical context overriding *ENVIRONMENT* with a fresh copy enhanced by
 all slot names/values as key/values from symbol list SLOTS in OBJECT."
