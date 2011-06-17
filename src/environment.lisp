@@ -40,11 +40,21 @@ external command use if desired."
         (expand result)
       result)))
 
+(defun stringify (object)
+  "stringify object => string
+
+Evaluate OBJECT to a STRING, casting WRITE-TO-STRING if necessary."
+  (if (stringp object)
+      object
+      (string-downcase (if (keywordp object)
+                           (symbol-name object)
+                           (write-to-string object)))))
+
 (defun (setf getenv) (val var &key (env *environment*))
   "(setf geten) var val &optional environment => val
 
 Store VAL for key VAR in hash table ENVIRONMENT."
-  (setf (gethash var env) val))
+  (setf (gethash (stringify var) env) val))
 
 (defun posix-getenv (name)
   "posix-getenv name => string

@@ -17,7 +17,7 @@
 (in-package :evol)
 
 (shadowing-import
- '(posix-getenv)
+ '(posix-getenv stringify)
  (find-package :evol-test))
 
 (in-package :evol-test)
@@ -34,6 +34,11 @@
 (defixture env-environment-fixture
   (setq env (make-hash-table))
   (-body-))
+
+(deftest stringifying ()
+  (mapc #'(lambda (object)
+            (is (equal "123" (stringify object))))
+        (list 123 "123" '123 :123)))
 
 (deftest getenv-default-nonexist ()
   (with-fixture env-environment-fixture

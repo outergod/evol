@@ -70,14 +70,6 @@ in given argument order."
         (mapc #'close (list ,@vars)))
       (mapcar #'get-output-stream-string (list ,@vars)))))
 
-(defun stringify (object)
-  "stringify object => string
-
-If OBJECT is a STRING, return it - else cast WRITE-TO-STRING."
-  (if (stringp object)
-      object
-    (write-to-string object)))
-
 (defmacro env-let (bindings &body body)
   "env let bindings &body body => context
 
@@ -106,6 +98,20 @@ all slot names/values as key/values from symbol list SLOTS in OBJECT."
                             (list slot (slot-value ,%object slot)))
                         ,%slots)
          ,@body))))
+
+(defun plist-pairlist (plist)
+  "plist-pairlist (plist) => pairlist
+
+Evaluate property list PLIST to a list of proper key/value lists as required for
+LET-style bindings."
+  (labels ((rec (acc rest)
+             (if (null rest)
+                 (nreverse acc)
+                 (rec (cons (list (car rest)
+                                  (cadr rest))
+                            acc)
+                      (cddr rest)))))
+    (rec (list) plist)))
 
 (defun replace-with-region (replacefn &rest args)
   "replace-with-region replacefn &rest args => closure
