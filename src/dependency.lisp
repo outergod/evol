@@ -39,7 +39,7 @@ DEPENDENCYFN."
   (mapcar #'(lambda (elt)
               (dependency-node namefn dependencyfn elt))
           (remove-if-not predicate
-                         (alexandria:hash-table-values env))))
+                         (hash-table-values env))))
 
 (defun dependency-node (namefn dependencyfn object)
   "dependency-node namefn dependencyfn object => node
