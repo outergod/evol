@@ -40,11 +40,11 @@ external command use if desired."
         (expand result)
       result)))
 
-(defun (setf getenv) (val var &optional (environment *environment*))
+(defun (setf getenv) (val var &key (env *environment*))
   "(setf geten) var val &optional environment => val
 
 Store VAL for key VAR in hash table ENVIRONMENT."
-  (setf (gethash var environment) val))
+  (setf (gethash var env) val))
 
 (defun posix-getenv (name)
   "posix-getenv name => string
