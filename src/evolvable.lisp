@@ -89,7 +89,8 @@ Mark evolvable EVOL hatched."
 Call the next method in scope of a copy of *ENVIRONMENT* enhanced by all slots
 in EVOL specified by ENV-SLOTS."
     (declare (ignore args))
-    (with-slot-enhanced-environment ((env-slots evol) evol)
+    (with-slot-enhanced-environment (env-slots evol)
+        evol
       (call-next-method))))
 
 (defgeneric reset (evolvable)
@@ -168,6 +169,7 @@ itself auto-depend on them."
 
 Call HIVE's TRIGGER thunk. Signals HIVE-BURST condition."
     (declare (ignore args))
+    (setf (hatched hive) t)
     (signal 'hive-burst :spawn (funcall (hive-trigger hive))))
 
 (defmethod expand ((hive hive))
