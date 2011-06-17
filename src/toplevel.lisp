@@ -39,14 +39,14 @@
                           (jobs   :options ("j" "jobs")             :default "1"
                                   :argument "JOBS" :description "Breed JOBS evolvables simultaneously.")))
 
-(defmacro devolution (name (&body dependencies) &rest args &key type &allow-other-keys)
-  "devolution name &rest args &key type &allow-other-keys => object
+(defmacro devolution (name (&body inputs) (&body outputs) &rest args &key type &allow-other-keys)
+  "devolution name (&body inputs) (&body outputs) &rest args &key type &allow-other-keys => object
 
 Top-level syntactic sugar macro to create evolvables. Name will be the
 environmental hash key, :TYPE must be a valid class name and all other keys will
 be proxied to MAKE-INSTANCE."
   `(make-instance ,type :name ,name ,@(remove-from-plist args :type)
-                        :deps '(,@dependencies)))
+                  :inputs (list ,@inputs) :outputs (list ,@outputs)))
 
 (defmacro default (name)
   "default name => mixed
@@ -158,11 +158,11 @@ Print help."
   "jobs-breeder jobs => breeder
 
 Create the appropriate BREEDER for the number of JOBS."
-  (if (> 1 jobs)
+  (if (> jobs 1)
       (make-instance 'swarm :worker-capacity jobs
                      :job-capacity 0
                      :worker-timeout-duration 600)
-    (make-instance 'breeder)))
+      (make-instance 'breeder)))
 
 (defun load-evolution (options)
   "load-evolution options => void
