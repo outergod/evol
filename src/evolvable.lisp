@@ -18,10 +18,25 @@
 
 ;;; conditions
 (define-condition hive-burst (error)
-  ((spawn :initarg :spawn
+  ((hive  :initarg :hive
+          :reader  hive-burst-of)
+   (spawn :initarg :spawn
           :reader  spawn-burst-of))
   (:documentation "Condition that signals a HIVE has hatched and child
 evolvables have been created and need to be taken into account during evolution processes."))
+
+(defun hive-burst-nodes (resolvefn burst)
+"hive-burst-nodes resolvefn burst => dependency-graph
+
+Evaluates to fresh dependency graph for HIVE-BURST BURST as determined by
+RESOLVEFN, e.g. RESOLVE-QUEUE or RESOLVE-DAG."
+  (let ((hive (hive-burst-of burst)))
+    (funcall resolvefn
+             (list (name hive))
+             (mapcar #'(lambda (elt)
+                         (dependency-node #'name #'dependencies elt))
+                     (cons hive
+                           (spawn-burst-of burst))))))
 
 
 ;;; classes
@@ -103,6 +118,14 @@ Reset evolution of EVOLVABLE.")
 Set slot HATCHED back to nil. Useful for development (only?)."
     (setf (hatched-p evol) nil)))
 
+(defgeneric resolve-evol-nodes (resolvefn evolvable nodes)
+  (:method (resolvefn (evol evolvable) nodes)
+    "resolve-evol-nodes resolvefn evolvable nodes => dependency-graph
+
+Evaluates to fresh dependency graph for EVOLVABLE EVOL determined by RESOLVEFN
+from dependency NODES."
+    (funcall resolvefn (find-node (name evol) nodes) nodes)))
+
 (defun evolvable-p (object)
   "evolvable-p object => boolean
 
@@ -180,7 +203,7 @@ Call HIVE's TRIGGER thunk. Signals HIVE-BURST condition."
       (or burst
           (progn
             (setq burst t)
-            (signal 'hive-burst :spawn (funcall (hive-trigger hive)))))))
+            (signal 'hive-burst :hive hive :spawn (funcall (hive-trigger hive)))))))
 
 (defmethod expand ((hive hive))
   "expand hive => list

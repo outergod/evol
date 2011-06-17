@@ -1,5 +1,5 @@
 ;;;; evol - breeder.lisp
-;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
+;;;; Copyright (C) 2009 2011  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 (defmacro with-dependency-nodes (var &body body)
   "with-dependency-nodes var &body body => context
 
-Evaluate BODY in scope of VAR bound to dependency node list."
+Evaluate BODY in scope of VAR bound to dependency node list from *ENVIRONMENT*."
   `(let ((,var (dependency-nodes-hashtable #'evolvable-p #'name #'dependencies *environment*)))
      ,@body))
 
@@ -67,10 +67,12 @@ Mutex-protected FORMAT."
 
 Breed dependency evolvables of EVOL sequentially depth-first up to and including
 EVOL itself. No multithreading, minimal overhead, nil deadlocks."
-    (with-dependency-nodes nodes
-      (nreverse (mapcar #'(lambda (name)
-                            (evolve (getenv name :expanded nil)))
-                        (resolve-queue (find-node (name evol) nodes) nodes))))))
+    (labels ((collect (name)
+               (handler-case (list (evolve (getenv name :expanded nil)))
+                 (hive-burst (condition)
+                   (mapcan #'collect (hive-burst-nodes #'resolve-queue condition))))))
+      (with-dependency-nodes nodes
+        (nreverse (mapcan #'collect (resolve-evol-nodes #'resolve-queue evol nodes)))))))
 
 
 ;;; swarm class
@@ -154,12 +156,7 @@ simple real-life evolutions with mediocre complexity."
                                     (enqueue-breeding swarm evol))
                                   (mapthread #'rec (cdr branch)))
                      (hive-burst (condition)
-                       (locked-breed evol
-                                     (resolve-dag (list (name evol))
-                                                  (mapcar #'(lambda (elt)
-                                                              (dependency-node #'name #'dependencies elt))
-                                                          (cons evol
-                                                                (spawn-burst-of condition))))))))))
+                       (locked-breed evol (hive-burst-nodes #'resolve-dag condition)))))))
       (with-dependency-nodes nodes
         (reinitialize-instance swarm :job-capacity (length nodes))
-        (rec (resolve-dag (find-node (name evol) nodes) nodes))))))
+        (rec (resolve-evol-nodes #'resolve-dag evol nodes))))))
