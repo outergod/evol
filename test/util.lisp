@@ -1,5 +1,5 @@
 ;;;; evol - util.lisp
-;;;; Copyright (C) 2010  Alexander Kahl <e-user@fsfe.org>
+;;;; Copyright (C) 2010 2011  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 (in-package :evol)
 
 (shadowing-import
- '(mapthread with-outputs-to-strings stringify with-slot-enhanced-environment)
+ '(mapthread with-outputs-to-strings with-slot-enhanced-environment)
  (find-package :evol-test))
 
 (in-package :evol-test)
@@ -47,15 +47,10 @@
                (write-string "baz" three)
                'result)))))
 
-(deftest test-stringify ()
-  (mapc #'(lambda (object)
-            (is (equal "123" (stringify object))))
-        (list 123 "123" '123)))
-
 (deftest test-with-slot-enhanced-environment ()
   (with-fixture util-environment-fixture
    (is (equal (list "foo" "bar")
-              (with-slot-enhanced-environment ((list 'slot1 'slot2)
-                                               (make-instance 'slot-tester :slot1 "foo" :slot2 "bar"))
-               (list (gethash 'slot1 *environment*)
-                     (gethash 'slot2 *environment*)))))))
+              (with-slot-enhanced-environment '(slot1 slot2)
+                  (make-instance 'slot-tester :slot1 "foo" :slot2 "bar")
+                (list (gethash 'slot1 *environment*)
+                      (gethash 'slot2 *environment*)))))))
