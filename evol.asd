@@ -39,6 +39,7 @@
                            (:file "dependency"  :depends-on ("package"))
                            (:file "shell"       :depends-on ("package" "util" "environment"))
                            (:file "evolvable"   :depends-on ("package" "shell" "path"))
-                           (:file "common-lisp" :depends-on ("package" "util" "evolvable"))
+                           ; (:file "common-lisp" :depends-on ("package" "util" "evolvable"))
                            (:file "breeder"     :depends-on ("package" "dependency" "evolvable"))
+                           (:file "transform"   :depends-on ("package" "environment" "evolvable"))
                            (:file "toplevel"    :depends-on ("package" "breeder"))))))

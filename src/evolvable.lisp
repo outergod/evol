@@ -45,21 +45,14 @@ RESOLVEFN, e.g. RESOLVE-QUEUE or RESOLVE-DAG."
   ((name :reader   name
          :initarg  :name
          :initform (required-argument :name)
-         :documentation "The name of the evolvable, also available in evol's environment")
-   (inputs :accessor inputs
+         :documentation "The name of the evolvable, also available in *EVOLVABLES*")
+   (inputs :accessor inputs-of
            :initarg :inputs
            :initform nil)
-   (outputs :accessor outputs
-            :initarg :outputs
-            :initform nil)
    (dependencies :accessor dependencies
                  :initarg  :deps
                  :initform nil
                  :documentation "List of supplementary evolvables this one depends on")
-   (env-slots :accessor env-slots
-              :initarg  :env-slots
-              :initform nil
-              :documentation "List of slots to lexically bind to the environment during evolution")
    (mutex     :reader   mutex
               :initform (bt:make-lock)
               :documentation "Mutex for the wait queue")
@@ -76,7 +69,7 @@ RESOLVEFN, e.g. RESOLVE-QUEUE or RESOLVE-DAG."
 
 Also register EVOLVABLE in the evol *ENVIRONMENT*."
   (declare (ignore initargs))
-  (setf (getenv (name evol)) evol))
+  (setf (getenv (name evol) :env *evolvables*) evol))
 
 (defmethod print-object ((evol evolvable) stream)
   "print-object evolvable stream => nil
@@ -92,21 +85,14 @@ Expand EVOL to its name."
 
 (defgeneric evolve (evolvable &rest args &key &allow-other-keys)
   (:documentation "Evolve this, whatever that may be")
+  (:method ((evol evolvable) &rest args &key &allow-other-keys)
+    (declare (ignore args)))
   (:method :after ((evol evolvable) &rest args &key &allow-other-keys)
     "evolve :after evol &rest args &key &allow-other-keys => t
 
 Mark evolvable EVOL hatched."
     (declare (ignore args))
-    (setf (hatched-p evol) t))
-  (:method :around ((evol evolvable) &rest args &key &allow-other-keys)
-    "evolve :around evol &rest args &key &allow-other-keys => context
-
-Call the next method in scope of a copy of *ENVIRONMENT* enhanced by all slots
-in EVOL specified by ENV-SLOTS."
-    (declare (ignore args))
-    (with-slot-enhanced-environment (env-slots evol)
-        evol
-      (call-next-method))))
+    (setf (hatched-p evol) t)))
 
 (defgeneric reset (evolvable)
   (:documentation "reset evolvable => result
@@ -216,12 +202,24 @@ Hives expand to a list of their dependencies' names."
 (defclass definite (evolvable)
   ((rules :accessor rules
           :initarg :rules
+          :initform nil
           :documentation "The rules used to evolve the definite"))
   (:documentation "Definite evolvables define transformation rules."))
 
+(defmethod evolve :around ((definite definite) &rest args &key &allow-other-keys)
+  "evolve :around definite &rest args &key &allow-other-keys => context
+
+Call the next method in scope of a copy of *ENVIRONMENT* enhanced by INPUTS-OF
+the DEFINITE."
+  (declare (ignore args))
+  (let ((*environment* (plist-hash-table (inputs-of definite) :test #'equal)))
+    (setf (getenv "out") (name definite))
+    (call-next-method)))
+
 (defmethod evolve ((definite definite) &rest args &key &allow-other-keys)
   (declare (ignore args))
-  (mapcar #'funcall
+  (mapcar #'(lambda (rule)
+              (funcall rule (gethash "source" *environment*)))
           (rules definite)))
 
 
@@ -245,7 +243,7 @@ of... files. Their existence can easily be checked through their distinct
 pathnames."))
 
 (defmethod evolved-p ((file file))
-  (file-exists-p (osicat:pathname-as-file (name file))))
+  (osicat:file-exists-p (osicat:pathname-as-file (name file))))
 
 
 ;;; executable
