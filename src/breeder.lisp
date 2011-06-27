@@ -20,8 +20,8 @@
 (defmacro with-dependency-nodes (var &body body)
   "with-dependency-nodes var &body body => context
 
-Evaluate BODY in scope of VAR bound to dependency node list from *ENVIRONMENT*."
-  `(let ((,var (dependency-nodes-hashtable #'evolvable-p #'name #'dependencies *environment*)))
+Evaluate BODY in scope of VAR bound to dependency node list from *EVOLVABLES*."
+  `(let ((,var (dependency-nodes-hashtable #'evolvable-p #'name #'dependencies *evolvables*)))
      ,@body))
 
 (defmacro eval-reverse-cons ((&body body1) (&body body2))
@@ -44,9 +44,9 @@ Evaluate BODY in locked scope of VAR bound to a new mutex with random name."
 (defun safe-getenv (lock var)
   "safe-getenv lock var => result
 
-Mutex-protected GETENV."
+Mutex-protected GETENV for *EVOLVABLES*."
   (bt:with-lock-held (lock)
-    (getenv var :expanded nil)))
+    (getenv var :env *evolvables* :expanded nil)))
 
 (defun safe-format (lock destination control-string &rest format-arguments)
   "safe-format lock control-string &rest format-arguments => nil
@@ -68,7 +68,7 @@ Mutex-protected FORMAT."
 Breed dependency evolvables of EVOL sequentially depth-first up to and including
 EVOL itself. No multithreading, minimal overhead, nil deadlocks."
     (labels ((collect (name)
-               (handler-case (list (evolve (getenv name :expanded nil)))
+               (handler-case (list (evolve (getenv name :env *evolvables* :expanded nil)))
                  (hive-burst (condition)
                    (mapcan #'collect (hive-burst-nodes #'resolve-queue condition))))))
       (with-dependency-nodes nodes

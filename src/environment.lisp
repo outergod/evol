@@ -16,6 +16,7 @@
 
 (in-package :evol)
 
+(defparameter *evolvables* (make-hash-table :test #'equal))
 (defparameter *environment* (make-hash-table :test #'equal))
 
 (defgeneric expand (standard-object)
@@ -61,3 +62,60 @@ Store VAL for key VAR in hash table ENVIRONMENT."
 
 Return value for POSIX environmental key name, empty string if nothing found."
   (or (osicat-posix:getenv name) ""))
+
+(defmacro env-let (bindings &body body)
+  "env let bindings &body body => context
+
+Evaluate BODY in scope of overridden *ENVIRONMENT* that is extended by
+LET-style key/value BINDINGS list."
+  `(let ((*environment* (copy-hash-table *environment*)))
+     (setf ,@(mapcan #'(lambda (binding)
+                         (list `(getenv ',(car binding)) (cadr binding)))
+                    bindings))
+     ,@body))
+
+(defmacro env-rebind (bindings &body body)
+  "env-rebind bindings &body body => context
+
+Evaluate BODY in scope of an env-let of BINDINGS that are already bound in
+scope. In effect, all current dynamic and lexical BINDINGS will be bound in
+*ENVIRONMENT* as well."
+  `(env-let ,(mapcar #'(lambda (binding)
+                         (list binding binding))
+                     bindings)
+     ,@body))
+
+(defmacro elet (bindings &body body)
+  "elet bindings &body body => context
+
+Evaluate BODY in scope of LET-style BINDINGS that also get recorded in the
+*ENVIRONMENT*."
+  `(let ,bindings
+     (env-rebind ,(mapcar #'car bindings)
+       ,@body)))
+
+(defmacro elet* (bindings &body body)
+  "elet* bindings &body body => context
+
+ELET* is to ELET what LET* is to LET, i.e. ELET* is the recursive version of
+ELET which means that each binding is available for all subsequent in turn, both
+lexically and in *ENVIRONMENT*."
+  (if bindings
+      `(elet (,(car bindings))
+         (elet* ,(cdr bindings)
+            ,@body))
+      (car body)))
+
+(defmacro elambda (args &body body)
+  "elambda args &body body => lambda
+
+Evaluates to LAMBDA with an additional first IN argument and BODY within an
+implicit ENV-LET of all other ARGS."
+  `(lambda (in ,@args)
+     (env-let ,(mapcar #'(lambda (arg)
+                           (let ((key (if (consp arg)
+                                          (car arg)
+                                          arg)))
+                             `(,key ,key)))
+                       (cons 'in (cdr (member '&key args))))
+       ,@body)))

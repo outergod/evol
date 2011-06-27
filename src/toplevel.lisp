@@ -39,14 +39,14 @@
                           (jobs   :options ("j" "jobs")             :default "1"
                                   :argument "JOBS" :description "Breed JOBS evolvables simultaneously.")))
 
-(defmacro devolution (name (&body inputs) (&body outputs) &rest args &key type &allow-other-keys)
-  "devolution name (&body inputs) (&body outputs) &rest args &key type &allow-other-keys => object
+(defmacro devolution (name inputs &rest args &key type &allow-other-keys)
+  "devolution name inputs &rest args &key type &allow-other-keys => evolvable
 
 Top-level syntactic sugar macro to create evolvables. Name will be the
 environmental hash key, :TYPE must be a valid class name and all other keys will
 be proxied to MAKE-INSTANCE."
   `(make-instance ,type :name ,name ,@(remove-from-plist args :type)
-                  :inputs (list ,@inputs) :outputs (list ,@outputs)))
+                  :inputs (list ,@inputs)))
 
 (defmacro default (name)
   "default name => mixed
@@ -62,11 +62,11 @@ List of what to evolve based on list of command line args, default evolution and
   (let ((evolvables (or (cdr args)
                      (list
                       (or *default-evolution*
-                          (car (hash-table-keys *environment*)))))))
+                          (car (hash-table-keys *evolvables*)))))))
     (if (null (car evolvables))
         (error 'unemployment)
       (mapcar #'(lambda (evolvable)
-                  (or (getenv evolvable :expanded nil :default nil)
+                  (or (getenv evolvable :env *evolvables* :expanded nil :default nil)
                       (error 'illegal-evolvable :evolvable evolvable)))
               evolvables))))
 
@@ -189,7 +189,7 @@ Heads-up: Quits CL after execution."
                              (breeder (jobs-breeder jobs)))
                         (load-evolution opts)
                         (mapc #'(lambda (name)
-                                  (breed breeder (getenv name :expanded nil)))
+                                  (breed breeder (getenv name :env *evolvables* :expanded nil)))
                               (evolution-arguments args))))
                     0)
                   (illegal-evolvable (condition)
