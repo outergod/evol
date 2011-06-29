@@ -48,13 +48,6 @@ Mutex-protected GETENV for *EVOLVABLES*."
   (bt:with-lock-held (lock)
     (getenv var :env *evolvables* :expanded nil)))
 
-(defun safe-format (lock destination control-string &rest format-arguments)
-  "safe-format lock control-string &rest format-arguments => nil
-
-Mutex-protected FORMAT."
-  (bt:with-lock-held (lock)
-    (apply #'format destination control-string format-arguments)))
-
 
 ;;; breeder class
 (defclass breeder () ()
@@ -114,16 +107,12 @@ evolution result."
              (finishfn #'(lambda (job)
                            (declare (ignore job))
                            (bt:with-lock-held (job-lock)
-                             (bt:condition-notify job-waitqueue))))
-             (formatfn #'(lambda (destination control-string &rest format-arguments)
-                           (declare (ignore destination))
-                           (safe-format (stream-lock swarm)
-                                        (swarm-stream swarm) control-string format-arguments)))
+                             (bt:condition-notify job-waitqueue))))             
              (job (patron:submit-job
                    swarm
                    (make-instance 'patron:job
                                   :function #'(lambda ()
-                                                (evolve evol :formatfn formatfn))
+                                                (evolve evol))
                                   :result-report-function finishfn
                                   :error-report-function  finishfn))))
 
@@ -141,22 +130,26 @@ branch (equivalent here) while locking the evolvables encountered. Breeding is
 forwarded to the Patron queue that works by using a thread pool itself.
 The overhead involved caused by using this method should pay off early even for
 simple real-life evolutions with mediocre complexity."
-  (let ((env-lock (bt:make-lock "env")))
-    (labels ((rec (branch)
-                  (if (null branch)
-                      nil
-                    (let* ((evol (safe-getenv env-lock (car branch)))
-                           (evol-lock (mutex evol)))
-                      (bt:with-lock-held (evol-lock)
-                        (locked-breed evol branch)))))
-             (locked-breed (evol branch)
-               (or (hatched-p evol)
-                   (handler-case (eval-reverse-cons
-                                  (bt:with-lock-held (env-lock)
-                                    (enqueue-breeding swarm evol))
-                                  (mapthread #'rec (cdr branch)))
-                     (hive-burst (condition)
-                       (locked-breed evol (hive-burst-nodes #'resolve-dag condition)))))))
-      (with-dependency-nodes nodes
-        (reinitialize-instance swarm :job-capacity (length nodes))
-        (rec (resolve-evol-nodes #'resolve-dag evol nodes))))))
+  (flet ((format (destination control-string &rest format-arguments)
+           (declare (ignore destination))
+           (bt:with-lock-held ((stream-lock swarm))
+             (apply #'format (swarm-stream swarm) control-string format-arguments))))
+    (let ((env-lock (bt:make-lock "env")))
+      (labels ((rec (branch)
+                 (if (null branch)
+                     nil
+                     (let* ((evol (safe-getenv env-lock (car branch)))
+                            (evol-lock (mutex evol)))
+                       (bt:with-lock-held (evol-lock)
+                         (locked-breed evol branch)))))
+               (locked-breed (evol branch)
+                 (or (hatched-p evol)
+                     (handler-case (eval-reverse-cons
+                                    (bt:with-lock-held (env-lock)
+                                      (enqueue-breeding swarm evol))
+                                    (mapthread #'rec (cdr branch)))
+                       (hive-burst (condition)
+                         (locked-breed evol (hive-burst-nodes #'resolve-dag condition)))))))
+        (with-dependency-nodes nodes
+          (reinitialize-instance swarm :job-capacity (length nodes))
+          (rec (resolve-evol-nodes #'resolve-dag evol nodes)))))))

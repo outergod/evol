@@ -19,7 +19,7 @@
 (defpackage :evol
   (:nicknames :love)
   (:use :cl :external-program :alexandria)
-  (:shadow :copy-stream :copy-file)
+  (:shadow :copy-stream :copy-file :format)
   (:export :pathname-suffix-p
            :pathname-change-suffix
            :run-command

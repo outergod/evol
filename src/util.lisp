@@ -18,6 +18,9 @@
 
 (set-dispatch-macro-character #\# #\> 'cl-heredoc:read-heredoc)
 
+(defun format (destination control-string &rest format-arguments)
+  (apply #'cl:format destination control-string format-arguments))
+
 (defun posix-argv ()
   "posix-argv => list
 
