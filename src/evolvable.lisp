@@ -219,7 +219,7 @@ the DEFINITE."
 (defmethod evolve ((definite definite) &rest args &key &allow-other-keys)
   (declare (ignore args))
   (mapcar #'(lambda (rule)
-              (funcall rule (gethash "source" *environment*)))
+              (funcall rule (getenv "source")))
           (rules definite)))
 
 
