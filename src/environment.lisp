@@ -39,7 +39,7 @@ external command use if desired."
     (if (and expanded
              (typep result 'standard-object))
         (expand result)
-      result)))
+        result)))
 
 (defun stringify (object)
   "stringify object => string
@@ -47,7 +47,7 @@ external command use if desired."
 Evaluate OBJECT to a STRING, casting WRITE-TO-STRING if necessary."
   (if (stringp object)
       object
-      (string-downcase (if (keywordp object)
+      (string-downcase (if (symbolp object)
                            (symbol-name object)
                            (write-to-string object)))))
 
