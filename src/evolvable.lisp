@@ -99,31 +99,10 @@ Evaluate fresh random UUID version 4 URN."
     (setf (getenv uri :env *evolvables*) evol)))
 
 (defmethod initialize-instance :after ((evol evolvable) &rest initargs &key &allow-other-keys)
-  (register-evolvable evol (apply #'initialize-uri evol initargs)))
-
-
-(defmethod initialize-instance :around ((evol evolvable) &rest initargs &key &allow-other-keys)
-  (declare (ignore initargs))
-  (call-next-method))
-
-(defmethod initialize-instance :around ((file file) &rest initargs &key &allow-other-keys)
-  (declare (ignore initargs))
-  (call-next-method))
-
-(defmethod initialize-instance ((evol evolvable) &rest initargs &key &allow-other-keys)
-  (declare (ignore initargs))
-  (call-next-method))
-
-(defmethod initialize-instance ((file file) &rest initargs &key &allow-other-keys)
-  (declare (ignore initargs))
-  (call-next-method))
-
-(defmethod initialize-instance :after ((evol evolvable) &rest initargs &key &allow-other-keys)
-   "initialize-instance :after evol &rest initargs => evol
+   "initialize-instance :after evol &rest initargs &key &allow-other-keys => evol
  
 Also register EVOL in *EVOLVABLES*."
-   (declare (ignore initargs))
-   (setf (getenv (uri-of evol) :env *evolvables*) evol))
+  (register-evolvable evol (apply #'initialize-uri evol initargs)))
 
 (defmethod expand ((evol evolvable))
   "expand evol => urn
