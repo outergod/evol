@@ -340,27 +340,3 @@ contained within. This class ensures its file is executable after creation."))
 
 (defmethod evolve :after ((exe executable) &rest args &key &allow-other-keys)
   (run-command (interpolate-commandline "chmod +x %@" :out (path-of exe))))
-
-
-;; ;;;; Generic
-;; ;;; generic-transformator class
-;; (defclass generic-transformator (definite)
-;;   ((rule :accessor rule
-;;          :initarg :rule
-;;          :initform (required-argument :rule)))
-;;   (:documentation "Objects of this kind evolve through running an external
-;; program through interpolating the rule and source function contained within
-;; honoring common quoting rules in line with Bourne shell syntax."))
-
-;; (defmethod evolve ((trans generic-transformator) &rest args &key &allow-other-keys)
-;;   (run-command (interpolate-commandline (rule trans) *environment*)))
-
-
-;; ;;; generic class
-;; (defclass generic (generic-transformator file) ()
-;;   (:documentation "TODO"))
-
-
-;; ;;; program class
-;; (defclass program (generic-transformator executable) ()
-;;   (:documentation "TODO"))
