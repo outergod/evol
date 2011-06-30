@@ -32,67 +32,124 @@ Evaluates to fresh dependency graph for HIVE-BURST BURST as determined by
 RESOLVEFN, e.g. RESOLVE-QUEUE or RESOLVE-DAG."
   (let ((hive (hive-burst-of burst)))
     (funcall resolvefn
-             (list (name hive))
+             (list (uri-of hive))
              (mapcar #'(lambda (elt)
-                         (dependency-node #'name #'dependencies elt))
+                         (dependency-node #'uri-of #'dependencies elt))
                      (cons hive
                            (spawn-burst-of burst))))))
+
+(defun urn-nss (nid nss)
+  "urn-nss nss nid => urn
+
+Evaluate fresh URN string from namespace identifier and namespace-specific
+string."
+  (format nil "urn:~a:~a" nid nss))
+
+(defun random-urn ()
+  "random-urn => urn
+
+Evaluate fresh random UUID version 4 URN."
+  (urn-nss "uuid" (uuid:make-v4-uuid)))
 
 
 ;;; classes
 ;;; evolvable, base target class
 (defclass evolvable ()
-  ((name :reader   name
-         :initarg  :name
-         :initform (required-argument :name)
-         :documentation "The name of the evolvable, also available in *EVOLVABLES*")
+  ((path :initarg :path
+         :reader path-of
+         :initform nil
+         :documentation
+"Path of the evolvable, can be either a URL or URN path")
+   (uniform-resource-identifier :reader uri-of
+                                :initform nil
+                                :documentation
+"The full URI of an evolvable, also available in *EVOLVABLES*")
    (inputs :accessor inputs-of
            :initarg :inputs
-           :initform nil)
+           :initform nil
+           :documentation
+"Transformed lexical environment of an evolvable during its creation time.")
    (dependencies :accessor dependencies
                  :initarg  :deps
                  :initform nil
-                 :documentation "List of supplementary evolvables this one depends on")
+                 :documentation
+"List of other evolvables this one depends on")
    (mutex     :reader   mutex
               :initform (bt:make-lock)
-              :documentation "Mutex for the wait queue")
+              :documentation
+"Mutex for the wait queue")
    (waitqueue :reader   waitqueue
               :initform (bt:make-condition-variable)
-              :documentation "Wait queue used for multithreaded breeding")
+              :documentation
+"Wait queue used for multithreaded breeding")
    (hatched   :accessor hatched-p
               :initform nil
-              :documentation "Whether evolution is finished"))
+              :documentation
+"Whether evolution is finished"))
   (:documentation "Base class for all evolvables."))
 
-(defmethod initialize-instance :after ((evol evolvable) &rest initargs)
-  "initialize-instance :after evol &rest initargs => evol
+(defgeneric initialize-uri (evolvable &rest initargs &key &allow-other-keys)
+  (:method ((evol evolvable) &rest initargs &key &allow-other-keys)
+    (declare (ignore initargs))
+    (setf (slot-value evol 'uniform-resource-identifier)
+          (random-urn))))
 
-Also register EVOLVABLE in the evol *ENVIRONMENT*."
+(defgeneric register-evolvable (evolvable uri)
+  (:method ((evol evolvable) uri)
+    (setf (getenv uri :env *evolvables*) evol)))
+
+(defmethod initialize-instance :after ((evol evolvable) &rest initargs &key &allow-other-keys)
+  (register-evolvable evol (apply #'initialize-uri evol initargs)))
+
+
+(defmethod initialize-instance :around ((evol evolvable) &rest initargs &key &allow-other-keys)
   (declare (ignore initargs))
-  (setf (getenv (name evol) :env *evolvables*) evol))
+  (call-next-method))
 
-(defmethod print-object ((evol evolvable) stream)
-  "print-object evolvable stream => nil
+(defmethod initialize-instance :around ((file file) &rest initargs &key &allow-other-keys)
+  (declare (ignore initargs))
+  (call-next-method))
 
-Printing evolvable-derived objects must simply return their names."
-  (princ (name evol) stream))
+(defmethod initialize-instance ((evol evolvable) &rest initargs &key &allow-other-keys)
+  (declare (ignore initargs))
+  (call-next-method))
+
+(defmethod initialize-instance ((file file) &rest initargs &key &allow-other-keys)
+  (declare (ignore initargs))
+  (call-next-method))
+
+(defmethod initialize-instance :after ((evol evolvable) &rest initargs &key &allow-other-keys)
+   "initialize-instance :after evol &rest initargs => evol
+ 
+Also register EVOL in *EVOLVABLES*."
+   (declare (ignore initargs))
+   (setf (getenv (uri-of evol) :env *evolvables*) evol))
 
 (defmethod expand ((evol evolvable))
-  "expand evol => string
+  "expand evol => urn
 
-Expand EVOL to its name."
-  (name evol))
+Expand EVOL to its URI by default."
+  (uri-of evol))
+
+(defmethod print-object ((evol evolvable) stream)
+  "print-object evol stream => string
+
+Printing evolvable-derived objects uses their URI or falls back to default if
+unavailable."
+  (if (slot-boundp evol 'uniform-resource-identifier)
+      (princ (uri-of evol) stream)
+      (call-next-method)))
 
 (defgeneric evolve (evolvable &rest args &key &allow-other-keys)
   (:documentation "Evolve this, whatever that may be")
   (:method ((evol evolvable) &rest args &key &allow-other-keys)
     (declare (ignore args)))
   (:method :after ((evol evolvable) &rest args &key &allow-other-keys)
-    "evolve :after evol &rest args &key &allow-other-keys => t
+           "evolve :after evol &rest args &key &allow-other-keys => t
 
 Mark evolvable EVOL hatched."
-    (declare (ignore args))
-    (setf (hatched-p evol) t)))
+           (declare (ignore args))
+           (setf (hatched-p evol) t)))
 
 (defgeneric reset (evolvable)
   (:documentation "reset evolvable => result
@@ -110,7 +167,7 @@ Set slot HATCHED back to nil. Useful for development (only?)."
 
 Evaluates to fresh dependency graph for EVOLVABLE EVOL determined by RESOLVEFN
 from dependency NODES."
-    (funcall resolvefn (find-node (name evol) nodes) nodes)))
+    (funcall resolvefn (find-node (uri-of evol) nodes) nodes)))
 
 (defun evolvable-p (object)
   "evolvable-p object => boolean
@@ -213,7 +270,7 @@ Call the next method in scope of a copy of *ENVIRONMENT* enhanced by INPUTS-OF
 the DEFINITE."
   (declare (ignore args))
   (let ((*environment* (plist-hash-table (inputs-of definite) :test #'equal)))
-    (setf (getenv "out") (name definite))
+    (setf (getenv "out") (expand definite))
     (call-next-method)))
 
 (defmethod evolve ((definite definite) &rest args &key &allow-other-keys)
@@ -237,24 +294,52 @@ post-validate their evolution."))
 
 
 ;;; file class
-(defclass file (checkable) ()
+(defclass file (checkable definite)
+  ((host :initarg :host
+         :reader host-of
+         :initform ""
+         :documentation
+"Host this file resides on; defaults to localhost denoted by the empty string"))
   (:documentation "Files are targets that usually lead to evolution
 of... files. Their existence can easily be checked through their distinct
 pathnames."))
 
+(defmethod initialize-instance :before ((file file) &rest initargs &key &allow-other-keys)
+  "initialize-instance :before file &rest initargs => file
+
+Check for mandatory :path init argument."
+  (unless (getf initargs :path)
+    (required-argument :path)))
+
+(defmethod initialize-uri ((file file) &rest initargs &key &allow-other-keys)
+  "initialize-uri file &rest initargs => uri
+
+Provide default method to evaluate URI of FILE as a file URI."
+  (declare (ignore initargs))
+  (with-accessors ((host host-of) (path path-of))
+      file
+    (setf (slot-value file 'uniform-resource-identifier)
+          (format nil "file://~a~a" host path))))
+
+(defmethod expand ((file file))
+  "expand file => urn
+
+Expand FILE to its path."
+  (path-of file))
+
 (defmethod evolved-p ((file file))
-  (osicat:file-exists-p (osicat:pathname-as-file (name file))))
+  (osicat:file-exists-p (osicat:pathname-as-file (path-of file))))
 
 
 ;;; executable
 (defclass executable (file) ()
-  (:documentation "Executables are files that can be run on a machine's stack by
-either containing machince code themselves or referring to an interpreter for
-source code contained within. This class ensures its file is executable after
-creation."))
+  (:documentation
+"Executables are files that can be run on a machine's stack by either containing
+machince code themselves or referring to an interpreter for source code
+contained within. This class ensures its file is executable after creation."))
 
 (defmethod evolve :after ((exe executable) &rest args &key &allow-other-keys)
-  (run-command (interpolate-commandline "chmod +x %@" :target (name exe))))
+  (run-command (interpolate-commandline "chmod +x %@" :out (path-of exe))))
 
 
 ;; ;;;; Generic

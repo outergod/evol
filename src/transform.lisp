@@ -66,17 +66,17 @@ MUTAGEN (latin: origin of change) is the DEFUN of ELAMBDA."
 (mutagen bash (command)
   (nth-value 1 (run-bash command :fatal t)))
 
-(mutagen evol (type &rest args)
-  (apply #'make-instance type :name in
+(mutagen evol (type in-arg &rest args)
+  (apply #'make-instance type in-arg in
          :inputs (hash-table-plist *environment*)
-         :deps (mapcar #'name (remove-if-not #'evolvable-p (flatten (hash-table-values *environment*))))
+         :deps (mapcar #'uri-of (remove-if-not #'evolvable-p (flatten (hash-table-values *environment*))))
          args))
 
 ; ls ((in string) &optional (path string))
 ; : in | (bash "ls %{path}/%<") | (file)
 
 (mutagen ls (&key (path "."))
-  (pipe in (bash "ls %{path}/%<") (evol 'file)))
+  (pipe in (bash "ls %{path}/%<") (evol 'file :path)))
 
 ; change-suffix ((in string) (suffix string))
 ; : in | expand | (lisp (pathname-change-suffix suffix (expand in)))
@@ -95,7 +95,7 @@ MUTAGEN (latin: origin of change) is the DEFUN of ELAMBDA."
 (mutagen compile-c (&key (suffix "o"))
   (elet* ((rules (list (elambda () (pipe in (%expand) (bash "gcc ${CFLAGS} -c -o %@ %<")))))
           (source in))
-    (pipe in (change-suffix suffix) (evol 'definite :rules rules))))
+    (pipe in (change-suffix suffix) (evol 'file :path :rules rules))))
 
 ; link-c (in name (path "."))
 ; : [in | (collapse) |> (bash "gcc ${CFLAGS -o %@ %<}")] > rules
@@ -107,13 +107,15 @@ MUTAGEN (latin: origin of change) is the DEFUN of ELAMBDA."
   (elet* ((rules (list (elambda () (pipe (redirect in (collapse)) (bash "gcc ${CFLAGS} -o %@ %<")))))
           (source in)
           (in (pipe name (bash "echo %{path}/%<"))))
-    (pipe in (evol 'definite :rules rules))))
+    (pipe in (evol 'file :path :rules rules))))
 
 ; program-c (in name path) 
 ; : in | (ls :path path) | (compile-c) |> (link-c :name name :path path)
 
 (mutagen program-c (name &key (path "."))
   (redirect (pipe in (ls :path path) (compile-c)) (link-c name :path path)))
+
+
 
 ;; (let ((breeder (jobs-breeder 4)))
 ;;   (reinitialize-instance breeder :job-capacity 4)

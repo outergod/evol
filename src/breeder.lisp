@@ -21,7 +21,7 @@
   "with-dependency-nodes var &body body => context
 
 Evaluate BODY in scope of VAR bound to dependency node list from *EVOLVABLES*."
-  `(let ((,var (dependency-nodes-hashtable #'evolvable-p #'name #'dependencies *evolvables*)))
+  `(let ((,var (dependency-nodes-hashtable #'evolvable-p #'uri-of #'dependencies *evolvables*)))
      ,@body))
 
 (defmacro eval-reverse-cons ((&body body1) (&body body2))
@@ -60,8 +60,8 @@ Mutex-protected GETENV for *EVOLVABLES*."
 
 Breed dependency evolvables of EVOL sequentially depth-first up to and including
 EVOL itself. No multithreading, minimal overhead, nil deadlocks."
-    (labels ((collect (name)
-               (handler-case (list (evolve (getenv name :env *evolvables* :expanded nil)))
+    (labels ((collect (uri)
+               (handler-case (list (evolve (getenv uri :env *evolvables* :expanded nil)))
                  (hive-burst (condition)
                    (mapcan #'collect (hive-burst-nodes #'resolve-queue condition))))))
       (with-dependency-nodes nodes
@@ -131,9 +131,14 @@ forwarded to the Patron queue that works by using a thread pool itself.
 The overhead involved caused by using this method should pay off early even for
 simple real-life evolutions with mediocre complexity."
   (flet ((format (destination control-string &rest format-arguments)
-           (declare (ignore destination))
-           (bt:with-lock-held ((stream-lock swarm))
-             (apply #'format (swarm-stream swarm) control-string format-arguments))))
+           (if destination
+               (bt:with-lock-held ((stream-lock swarm))
+                 (apply #'format (if (or (eq *standard-output* destination)
+                                         (eq t destination))
+                                     (swarm-stream swarm)
+                                     (swarm-error-stream swarm))
+                        control-string format-arguments))
+               (apply #'format nil control-string format-arguments))))
     (let ((env-lock (bt:make-lock "env")))
       (labels ((rec (branch)
                  (if (null branch)
