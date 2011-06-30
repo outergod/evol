@@ -28,7 +28,7 @@
                 :license "GPLv3+"
                 :depends-on (:external-program :cl-ppcre :alexandria
                              :unix-options :bordeaux-threads :patron :cl-heredoc
-                             :osicat)
+                             :osicat :uuid)
                 :components
                 ((:module "src"
                           :components
