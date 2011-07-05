@@ -1,5 +1,5 @@
 ;;;; evol - path.lisp
-;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
+;;;; Copyright (C) 2009 2011  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -29,3 +29,23 @@ Change suffix of path name string pathspec; adds suffix if none present yet."
   (let ((pathname (osicat:pathname-as-file pathspec)))
     (setf (slot-value pathname 'type) suffix)
     (namestring pathname)))
+
+(defun executable-p (pathspec)
+  (let* ((stat (osicat-posix:stat pathspec))
+         (permissions (osicat:file-permissions pathspec))
+         (user (osicat-posix:getpwuid (osicat-posix:geteuid)))
+         (owner (osicat-posix:getpwuid (osicat-posix:stat-uid stat)))
+         (group (osicat-posix:getgrgid (osicat-posix:stat-gid stat))))
+    (or (and (find :user-exec permissions)
+             (string= owner user))
+        (and (find :group-exec permissions)
+             (find user (nth-value 3 (osicat-posix:getgrnam group)) :test #'string=))
+        (find :other-exec permissions))))
+
+(defun find-program (name)
+  (some #'(lambda (path)
+            (let ((program (concatenate 'string (string-right-trim "/" path) "/" name)))
+              (when (and (osicat:file-exists-p program)
+                         (executable-p program))
+                (osicat:pathname-as-file program))))
+        (cl-ppcre:split ":" (posix-getenv "PATH"))))

@@ -123,6 +123,9 @@ MUTAGEN (latin: origin of change) is the DEFUN of ELAMBDA."
   (elet ((force (pipe force (junction "-f" ""))))
     (pipe (redirect in (collapse)) (bash "rm -v %{force} %<"))))
 
+(mutagen which ()
+  (pipe in (lisp (find-program in))))
+
 ;; (let ((breeder (jobs-breeder 4)))
 ;;   (reinitialize-instance breeder :job-capacity 4)
 ;;   (devolution "glob:///*.c" (:in "*.c" :path "/home/akahl/Projects/development/lisp/evol/showreel/simple-1") ()
