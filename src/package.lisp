@@ -23,7 +23,25 @@
   (:export :pathname-suffix-p
            :pathname-change-suffix
            :run-command
+           :run-bash
            :getenv
            :*environment*
+           :*evolvables*
            :repl
-           :in))
+           :in
+           :out
+           :format
+           :evolvable-p
+           :expand
+           :uri-of
+           :file
+           :pipe
+           :redirect
+           :lisp
+           :find-program))
+
+(defpackage :evol-user
+  (:shadowing-import-from :cl :lambda :&optional :&key :&rest
+                          :*standard-output* :*error-output*
+                          :nil :t :string :list)
+  (:shadowing-import-from :evol :in :out :mutagen :elambda :env-bind-let* :env-let :format :evolvable-p :run-bash :*environment* :*evolvables* :pipe :redirect :lisp))

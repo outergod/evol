@@ -1,5 +1,5 @@
 ;;;; evol - evol.asd
-;;;; Copyright (C) 2009  Alexander Kahl <e-user@fsfe.org>
+;;;; Copyright (C) 2009 2011  Alexander Kahl <e-user@fsfe.org>
 ;;;; This file is part of evol.
 ;;;; evol is free software; you can redistribute it and/or modify
 ;;;; it under the terms of the GNU General Public License as published by
@@ -42,4 +42,5 @@
                            ; (:file "common-lisp" :depends-on ("package" "util" "evolvable"))
                            (:file "breeder"     :depends-on ("package" "dependency" "evolvable"))
                            (:file "transform"   :depends-on ("package" "environment" "evolvable"))
-                           (:file "toplevel"    :depends-on ("package" "breeder"))))))
+                           (:file "mutagen"     :depends-on ("package" "transform"))
+                           (:file "toplevel"    :depends-on ("package" "breeder" "mutagen"))))))

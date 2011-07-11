@@ -107,7 +107,7 @@ MUTAGEN (latin: origin of change) is the DEFUN of ELAMBDA."
 ; program-c (in name path) 
 ; : in | (ls :path path) | (compile-c) |> (link-c :name name :path path)
 
-(mutagen program-c (name &key (path "."))
+(mutagen program-c (name &optional (path "."))
   (out (redirect (pipe in (ls :path path) (compile-c)) (link-c name :path path))))
 
 (mutagen junction (then else)
@@ -136,4 +136,8 @@ MUTAGEN (latin: origin of change) is the DEFUN of ELAMBDA."
 
 ;; (let ((breeder (jobs-breeder 1)))
 ;;   (breed breeder (getenv "/home/akahl/Projects/development/lisp/evol/showreel/simple-1/program.o" :env *evolvables* :expanded nil)))
+
+;; (let ((breeder (jobs-breeder 4)))
+;;   (reinitialize-instance breeder :job-capacity 4)
+;;   (breed breeder (getenv "file:///home/akahl/Projects/development/lisp/evol/showreel/simple-1/main" :expanded nil)))
 
