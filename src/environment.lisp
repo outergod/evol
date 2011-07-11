@@ -86,6 +86,7 @@ Evaluate BODY within LET* of BINDINGS with each binding SETF'd into
   `(let* ,(mapcar #'(lambda (binding)
                       `(,(car binding) (setf (getenv ',(car binding)) ,(cadr binding))))
                   bindings)
+     (declare (ignorable ,@(mapcar #'car bindings)))
      ,@body))
 
 (defmacro elambda (args &body body)
