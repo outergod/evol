@@ -41,12 +41,12 @@ MUTAGEN (latin: origin of change) is the DEFUN of ELAMBDA."
                          (ensure-list in))
                  in)))
     (rec in (cons trans args))))
-
+ 
 (defmacro redirect (in trans)
   `(let ((in ,in))
      ,(if (eq 'lisp (car trans))
          (cadr trans)
-         `(transcall ,in #',(car trans) ,@(cdr trans))))) ; write a test, bitch
+         `(funcall #',(car trans) in ,@(cdr trans))))) ; write a test, bitch
 
 (defmacro pipe (in trans &rest args)
   `(transmap ,in ,@(mapcar #'(lambda (form)
@@ -126,6 +126,13 @@ MUTAGEN (latin: origin of change) is the DEFUN of ELAMBDA."
 (mutagen which ()
   (pipe in (lisp (find-program in))))
 
+(mutagen call (predicate)
+  (funcall predicate in))
+
+(mutagen filter (predicate)
+  (elet ((dup in))
+    (pipe (redirect in (call predicate)) (junction dup nil))))
+
 ;; (let ((breeder (jobs-breeder 4)))
 ;;   (reinitialize-instance breeder :job-capacity 4)
 ;;   (devolution "glob:///*.c" (:in "*.c" :path "/home/akahl/Projects/development/lisp/evol/showreel/simple-1") ()
@@ -136,4 +143,3 @@ MUTAGEN (latin: origin of change) is the DEFUN of ELAMBDA."
 ;; (let ((breeder (jobs-breeder 1)))
 ;;   (breed breeder (getenv "/home/akahl/Projects/development/lisp/evol/showreel/simple-1/program.o" :env *evolvables* :expanded nil)))
 
- 
