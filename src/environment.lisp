@@ -63,48 +63,30 @@ Store VAL for key VAR in hash table ENVIRONMENT."
 Return value for POSIX environmental key name, empty string if nothing found."
   (or (osicat-posix:getenv name) ""))
 
+
+(defmacro env-bind (bindings)
+  `(setf ,@(mapcan #'(lambda (binding)
+                       (list `(getenv ',(car binding)) (cadr binding)))
+                   bindings)))
+
 (defmacro env-let (bindings &body body)
-  "env let bindings &body body => context
+  "env-let bindings &body body => context
 
 Evaluate BODY in scope of overridden *ENVIRONMENT* that is extended by
 LET-style key/value BINDINGS list."
   `(let ((*environment* (copy-hash-table *environment*)))
-     (setf ,@(mapcan #'(lambda (binding)
-                         (list `(getenv ',(car binding)) (cadr binding)))
-                    bindings))
+     (env-bind ,bindings)
      ,@body))
 
-(defmacro env-rebind (bindings &body body)
-  "env-rebind bindings &body body => context
+(defmacro env-bind-let* (bindings &body body)
+  "env-bind-let* bindings &body body => context
 
-Evaluate BODY in scope of an env-let of BINDINGS that are already bound in
-scope. In effect, all current dynamic and lexical BINDINGS will be bound in
-*ENVIRONMENT* as well."
-  `(env-let ,(mapcar #'(lambda (binding)
-                         (list binding binding))
-                     bindings)
-     ,@body))
-
-(defmacro elet (bindings &body body)
-  "elet bindings &body body => context
-
-Evaluate BODY in scope of LET-style BINDINGS that also get recorded in the
+Evaluate BODY within LET* of BINDINGS with each binding SETF'd into
 *ENVIRONMENT*."
-  `(let ,bindings
-     (env-rebind ,(mapcar #'car bindings)
-       ,@body)))
-
-(defmacro elet* (bindings &body body)
-  "elet* bindings &body body => context
-
-ELET* is to ELET what LET* is to LET, i.e. ELET* is the recursive version of
-ELET which means that each binding is available for all subsequent in turn, both
-lexically and in *ENVIRONMENT*."
-  (if bindings
-      `(elet (,(car bindings))
-         (elet* ,(cdr bindings)
-            ,@body))
-      (car body)))
+  `(let* ,(mapcar #'(lambda (binding)
+                      `(,(car binding) (setf (getenv ',(car binding)) ,(cadr binding))))
+                  bindings)
+     ,@body))
 
 (defmacro elambda (args &body body)
   "elambda args &body body => lambda
